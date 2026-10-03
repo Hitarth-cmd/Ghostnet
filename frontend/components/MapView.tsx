@@ -234,21 +234,24 @@ export default function MapView({
           data: currentLines,
           getSourcePosition: (d: any) => d.from,
           getTargetPosition: (d: any) => d.to,
-          getColor: [6, 182, 212, 60], // subtle translucent cyan
-          getWidth: 1.5,
+          getColor: [6, 182, 212, 45], // subtle translucent cyan
+          getWidth: 1.0,
           widthUnits: "pixels",
           pickable: false,
         })
       );
 
-      // Flow moving glowing particle heads
+      // Flow moving glowing particle heads (sleek, refined stream dots)
       deckLayers.push(
         new ScatterplotLayer({
           id: "deck-ocean-current-particles",
           data: currentLines,
           getPosition: (d: any) => d.head,
-          getRadius: 38000,
-          getFillColor: [34, 211, 238, 200], // neon cyan glow
+          radiusUnits: "pixels",
+          getRadius: 2.0,
+          radiusMinPixels: 1.2,
+          radiusMaxPixels: 3.0,
+          getFillColor: [34, 211, 238, 220], // sleek neon cyan glow
           stroked: false,
           pickable: false,
         })
