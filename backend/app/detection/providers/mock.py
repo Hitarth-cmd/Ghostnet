@@ -11,20 +11,20 @@ from app.models.enums import DetectionStatus, ObjectClass
 # every run, not a different random scatter each refresh.
 _SEED = 20260908
 
-# Anchor points around real Indian coastal regions. These are approximate
-# coastal reference coordinates used only to place plausible DEMO markers -
-# they are not derived from any actual satellite observation.
+# Anchor points located offshore in Indian marine waters (Arabian Sea, Bay of Bengal,
+# Andaman Sea, and Gulf of Mannar). Positioned safely off the coastline so all debris
+# detections and their forward drift trajectories stay strictly in open water.
 _ANCHORS = [
-    ("Goa coast", 15.32, 72.71),
-    ("Mumbai coast", 18.94, 72.62),
-    ("Kochi coast", 9.93, 76.20),
-    ("Chennai coast", 13.05, 80.10),
-    ("Visakhapatnam coast", 17.68, 83.25),
-    ("Gulf of Mannar", 9.15, 79.15),
-    ("Sundarbans coast", 21.60, 88.90),
-    ("Lakshadweep vicinity", 10.57, 72.64),
-    ("Gujarat coast (Kutch)", 22.45, 69.05),
-    ("Andaman vicinity", 11.62, 92.72),
+    ("Goa offshore", 15.20, 72.85),
+    ("Mumbai offshore", 18.80, 72.15),
+    ("Kochi offshore", 9.80, 75.60),
+    ("Chennai offshore", 13.15, 80.95),
+    ("Visakhapatnam offshore", 17.50, 84.10),
+    ("Gulf of Mannar waters", 8.85, 79.45),
+    ("Sundarbans offshore", 21.10, 89.05),
+    ("Lakshadweep waters", 10.55, 72.45),
+    ("Gujarat offshore (Kutch)", 22.10, 68.60),
+    ("Andaman waters", 11.60, 93.15),
 ]
 
 _CLASSES = [
@@ -49,10 +49,9 @@ def _build_demo_records() -> list[DetectionRecord]:
 
     for i, (region, lat0, lon0) in enumerate(_ANCHORS, start=1):
         external_id = f"DEMO-{i:03d}"
-        # Small deterministic jitter so points don't sit exactly on the
-        # anchor, but the jitter is seeded so it never changes between runs.
-        jitter_lat = rng.uniform(-0.35, 0.35)
-        jitter_lon = rng.uniform(-0.35, 0.35)
+        # Small deterministic jitter that strictly stays offshore in ocean waters
+        jitter_lat = rng.uniform(-0.08, 0.08)
+        jitter_lon = rng.uniform(-0.08, 0.08)
         lat = round(lat0 + jitter_lat, 5)
         lon = round(lon0 + jitter_lon, 5)
 

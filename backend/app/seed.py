@@ -21,10 +21,19 @@ def seed_demo_data(db: Session) -> int:
     provider = MockDetectionProvider()
     created = 0
 
-    # 1. Seed detections
+    # 1. Seed detections (or update coordinates if refined)
+    from app.models.other import Trajectory, RiskAssessment, Report
     for record in provider.list_detections():
         existing = db.query(Detection).filter(Detection.external_id == record.external_id).one_or_none()
         if existing is not None:
+            if abs(existing.latitude - record.latitude) > 1e-4 or abs(existing.longitude - record.longitude) > 1e-4:
+                existing.latitude = record.latitude
+                existing.longitude = record.longitude
+                existing.geometry = record.geometry
+                # Clear outdated trajectories and reports so pipeline recalculates them in water
+                db.query(Trajectory).filter(Trajectory.detection_id == existing.id).delete()
+                db.query(RiskAssessment).filter(RiskAssessment.detection_id == existing.id).delete()
+                db.query(Report).filter(Report.detection_id == existing.id).delete()
             continue
         db.add(
             Detection(
