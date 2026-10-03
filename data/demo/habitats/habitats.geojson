@@ -1,0 +1,21 @@
+{
+  "type": "FeatureCollection",
+  "properties": {
+    "note": "DEMO / SYNTHETIC ecological habitat zones - NOT authoritative",
+    "source_name": "GhostNet Demo Dataset",
+    "license": "Demo / synthetic - not for operational use",
+    "dataset_version": "demo-1.0"
+  },
+  "features": [
+    {"type": "Feature", "properties": {"name": "DEMO Olive Ridley Turtle Nesting Zone - Odisha (approx.)", "feature_type": "habitat", "habitat_kind": "turtle_nesting"},
+     "geometry": {"type": "Polygon", "coordinates": [[[86.6,19.5],[87.0,19.5],[87.0,19.9],[86.6,19.9],[86.6,19.5]]]}},
+    {"type": "Feature", "properties": {"name": "DEMO Turtle Habitat - Gulf of Mannar (approx.)", "feature_type": "habitat", "habitat_kind": "turtle_habitat"},
+     "geometry": {"type": "Polygon", "coordinates": [[[78.8,8.9],[79.2,8.9],[79.2,9.2],[78.8,9.2],[78.8,8.9]]]}},
+    {"type": "Feature", "properties": {"name": "DEMO Coral Reef Zone - Lakshadweep (approx.)", "feature_type": "habitat", "habitat_kind": "coral_reef"},
+     "geometry": {"type": "Polygon", "coordinates": [[[72.5,10.5],[72.75,10.5],[72.75,10.75],[72.5,10.75],[72.5,10.5]]]}},
+    {"type": "Feature", "properties": {"name": "DEMO Coral Reef Zone - Gulf of Mannar (approx.)", "feature_type": "habitat", "habitat_kind": "coral_reef"},
+     "geometry": {"type": "Polygon", "coordinates": [[[79.0,9.05],[79.25,9.05],[79.25,9.25],[79.0,9.25],[79.0,9.05]]]}},
+    {"type": "Feature", "properties": {"name": "DEMO Mangrove/Estuarine Habitat - Sundarbans (approx.)", "feature_type": "habitat", "habitat_kind": "mangrove"},
+     "geometry": {"type": "Polygon", "coordinates": [[[88.6,21.5],[89.2,21.5],[89.2,22.0],[88.6,22.0],[88.6,21.5]]]}}
+  ]
+}

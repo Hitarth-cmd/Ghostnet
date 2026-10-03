@@ -1,0 +1,23 @@
+# Risk engine configuration.
+# Every feature is normalized to 0-1 before weighting. Weights are
+# whatever you decide reflects your ecological priorities - they do NOT
+# need to sum to 1 (the engine normalizes the weighted sum by the total
+# weight actually used).
+weights:
+  detection_confidence: 0.15
+  trajectory_confidence: 0.10
+  protected_area_overlap: 0.20
+  habitat_overlap: 0.20
+  species_habitat_overlap: 0.10
+  coastline_proximity: 0.10
+  fishing_activity: 0.05
+  forecast_uncertainty: 0.10
+
+thresholds:
+  LOW: 0.0
+  MEDIUM: 0.35
+  HIGH: 0.60
+  CRITICAL: 0.80
+
+# Distance (km) beyond which coastline proximity contributes ~0 risk.
+coastline_proximity_max_km: 50.0

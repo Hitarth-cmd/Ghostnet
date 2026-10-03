@@ -1,0 +1,25 @@
+{
+  "type": "FeatureCollection",
+  "properties": {
+    "note": "DEMO / SIMPLIFIED Indian coastline for software testing only - NOT survey-grade",
+    "source_name": "GhostNet Demo Dataset (simplified)",
+    "license": "Demo / synthetic - not for operational use",
+    "dataset_version": "demo-1.0"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"name": "DEMO West Coast of India (simplified)", "feature_type": "coastline"},
+      "geometry": {"type": "LineString", "coordinates": [
+        [69.6,22.5],[70.2,21.6],[72.6,21.2],[72.8,19.1],[73.0,17.9],[73.3,15.5],[74.1,13.0],[75.2,11.8],[75.8,11.2],[76.0,10.0],[76.2,9.4],[77.0,8.3]
+      ]}
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "DEMO East Coast of India (simplified)", "feature_type": "coastline"},
+      "geometry": {"type": "LineString", "coordinates": [
+        [77.0,8.3],[78.2,8.9],[79.3,9.3],[79.8,10.3],[80.3,13.1],[80.2,15.9],[81.7,16.9],[82.3,17.7],[83.3,17.7],[84.8,17.0],[86.7,19.8],[87.5,21.6],[88.9,21.9]
+      ]}
+    }
+  ]
+}

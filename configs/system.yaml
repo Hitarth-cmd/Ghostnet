@@ -1,0 +1,13 @@
+# System-wide, non-secret configuration.
+drift:
+  default_forecast_hours: [24, 48, 72]
+  default_particle_count: 60
+  demo_drift_speed_kmh: 0.5
+
+rag:
+  chunk_size_chars: 800
+  chunk_overlap_chars: 120
+  top_k: 4
+
+prioritization:
+  levels: [LOW, MEDIUM, HIGH, CRITICAL]

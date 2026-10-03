@@ -1,0 +1,88 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_USER: ghostnet
+      POSTGRES_PASSWORD: ghostnet
+      POSTGRES_DB: ghostnet
+    ports:
+      - "5432:5432"
+    volumes:
+      - ghostnet_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ghostnet"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      APP_ENV: production
+      DATA_MODE: demo
+      DATABASE_URL: postgresql+psycopg://ghostnet:ghostnet@postgres:5432/ghostnet
+      REDIS_URL: redis://redis:6379/0
+      JOB_BACKEND: redis
+      MODEL_PROVIDER: mock
+      OCEAN_DATA_PROVIDER: demo
+      VECTOR_STORE: memory
+      EMBEDDING_PROVIDER: hashing
+      LLM_PROVIDER: mock
+      CORS_ORIGINS: '["http://localhost:3000"]'
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: celery -A app.jobs.celery_app worker --loglevel=info
+    environment:
+      APP_ENV: production
+      DATA_MODE: demo
+      DATABASE_URL: postgresql+psycopg://ghostnet:ghostnet@postgres:5432/ghostnet
+      REDIS_URL: redis://redis:6379/0
+      JOB_BACKEND: redis
+      MODEL_PROVIDER: mock
+      OCEAN_DATA_PROVIDER: demo
+      VECTOR_STORE: memory
+      EMBEDDING_PROVIDER: hashing
+      LLM_PROVIDER: mock
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  ghostnet_pgdata:
