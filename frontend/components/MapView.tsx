@@ -248,9 +248,9 @@ export default function MapView({
           data: currentLines,
           getPosition: (d: any) => d.head,
           radiusUnits: "pixels",
-          getRadius: 2.0,
-          radiusMinPixels: 1.2,
-          radiusMaxPixels: 3.0,
+          getRadius: 3.5,
+          radiusMinPixels: 2.2,
+          radiusMaxPixels: 5.0,
           getFillColor: [34, 211, 238, 220], // sleek neon cyan glow
           stroked: false,
           pickable: false,

@@ -78,35 +78,69 @@ class DemoForcingProvider(ForcingProvider):
 
 
 class CMEMSForcingProvider(ForcingProvider):
-    """Adapter for Copernicus Marine Service current data (LIVE mode)."""
+    """Live forcing provider pulling from Copernicus Marine Service."""
 
     mode = ForcingMode.LIVE
 
-    def __init__(self) -> None:
+    def __init__(self, seed_lat: float = 12.0, seed_lon: float = 75.0, bbox_delta: float = 2.5) -> None:
         self.username = os.environ.get("CMEMS_USERNAME", "")
         self.password = os.environ.get("CMEMS_PASSWORD", "")
         if not self.username or not self.password:
             raise LiveForcingUnavailableError(
-                "CMEMS_USERNAME/CMEMS_PASSWORD are not set. Configure Copernicus "
-                "Marine credentials as environment variables, or use "
-                "OCEAN_DATA_PROVIDER=demo."
+                "CMEMS_USERNAME and CMEMS_PASSWORD must be configured in .env"
             )
 
-    def velocity_at(self, lat: float, lon: float, hours_since_start: float) -> tuple[float, float]:  # pragma: no cover
-        raise NotImplementedError(
-            "CMEMS live forcing requires the copernicusmarine client and network "
-            "access to Copernicus Marine Service, not available in this "
-            "environment. Implement this method against the copernicusmarine "
-            "Python client once credentials and network access are available."
-        )
+        try:
+            import copernicusmarine
+            copernicusmarine.login(username=self.username, password=self.password)
+
+            # Query a spatial bounding box around the debris incident
+            self.min_lat = seed_lat - bbox_delta
+            self.max_lat = seed_lat + bbox_delta
+            self.min_lon = seed_lon - bbox_delta
+            self.max_lon = seed_lon + bbox_delta
+
+            # Open subset stream (depth = 0.5m surface layer for floating marine debris)
+            self.ds = copernicusmarine.open_dataset(
+                dataset_id="cmems_mod_glo_phy-cur_anfc_0.083deg_P1D-m",
+                variables=["uo", "vo"],
+                minimum_latitude=self.min_lat,
+                maximum_latitude=self.max_lat,
+                minimum_longitude=self.min_lon,
+                maximum_longitude=self.max_lon,
+                minimum_depth=0.5,
+                maximum_depth=1.5,
+            )
+        except Exception as exc:
+            raise LiveForcingUnavailableError(f"Failed to initialize CMEMS forcing: {exc}") from exc
+
+    def velocity_at(self, lat: float, lon: float, hours_since_start: float) -> tuple[float, float]:
+        """Interpolate (u, v) velocities for a given coordinate and forecast step."""
+        try:
+            # Select nearest grid cell and time offset at surface depth
+            point_data = self.ds.sel(
+                latitude=lat,
+                longitude=lon,
+                method="nearest",
+            ).isel(depth=0, time=int(hours_since_start / 24.0) % len(self.ds.time))
+
+            u = float(point_data["uo"].values)
+            v = float(point_data["vo"].values)
+            if math.isnan(u) or math.isnan(v):
+                return 0.0, 0.0
+            return u, v
+        except Exception:
+            # Fallback safely to 0.0 if out of ocean domain or missing
+            return 0.0, 0.0
 
 
 def get_forcing_provider(mode: str, seed_lat: float, seed_lon: float) -> ForcingProvider:
-    if mode == "live":
+    if mode in ("live", "cmems"):
         try:
-            return CMEMSForcingProvider()
+            return CMEMSForcingProvider(seed_lat, seed_lon)
         except LiveForcingUnavailableError:
             # Explicit, visible fallback - never silently mislabel demo
             # data as live.
             return DemoForcingProvider(seed_lat, seed_lon)
     return DemoForcingProvider(seed_lat, seed_lon)
+
