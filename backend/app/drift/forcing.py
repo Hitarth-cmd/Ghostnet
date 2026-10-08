@@ -83,6 +83,14 @@ class CMEMSForcingProvider(ForcingProvider):
     mode = ForcingMode.LIVE
 
     def __init__(self, seed_lat: float = 12.0, seed_lon: float = 75.0, bbox_delta: float = 2.5) -> None:
+        from pathlib import Path
+        from dotenv import load_dotenv
+        import datetime as _dt
+
+        env_file = Path(__file__).resolve().parent.parent.parent / ".env"
+        if env_file.exists():
+            load_dotenv(env_file)
+
         self.username = os.environ.get("CMEMS_USERNAME", "")
         self.password = os.environ.get("CMEMS_PASSWORD", "")
         if not self.username or not self.password:
@@ -100,8 +108,11 @@ class CMEMSForcingProvider(ForcingProvider):
             self.min_lon = seed_lon - bbox_delta
             self.max_lon = seed_lon + bbox_delta
 
+            now = _dt.datetime.now(_dt.timezone.utc)
+            start_str = (now - _dt.timedelta(days=2)).strftime("%Y-%m-%d")
+
             # Open subset stream (depth = 0.5m surface layer for floating marine debris)
-            self.ds = copernicusmarine.open_dataset(
+            ds = copernicusmarine.open_dataset(
                 dataset_id="cmems_mod_glo_phy-cur_anfc_0.083deg_P1D-m",
                 variables=["uo", "vo"],
                 minimum_latitude=self.min_lat,
@@ -110,27 +121,33 @@ class CMEMSForcingProvider(ForcingProvider):
                 maximum_longitude=self.max_lon,
                 minimum_depth=0.5,
                 maximum_depth=1.5,
+                start_datetime=start_str,
             )
+            # Load into RAM and extract numpy matrices for instant particle advection
+            import numpy as np
+            loaded = ds.load()
+            self.lats = np.array(loaded["latitude"].values)
+            self.lons = np.array(loaded["longitude"].values)
+            self.uo_grid = np.array(loaded["uo"].isel(depth=0).values)  # shape (time, lat, lon)
+            self.vo_grid = np.array(loaded["vo"].isel(depth=0).values)
+            self.n_times = max(1, self.uo_grid.shape[0])
         except Exception as exc:
             raise LiveForcingUnavailableError(f"Failed to initialize CMEMS forcing: {exc}") from exc
 
     def velocity_at(self, lat: float, lon: float, hours_since_start: float) -> tuple[float, float]:
         """Interpolate (u, v) velocities for a given coordinate and forecast step."""
         try:
-            # Select nearest grid cell and time offset at surface depth
-            point_data = self.ds.sel(
-                latitude=lat,
-                longitude=lon,
-                method="nearest",
-            ).isel(depth=0, time=int(hours_since_start / 24.0) % len(self.ds.time))
+            import numpy as np
+            lat_idx = int(np.abs(self.lats - lat).argmin())
+            lon_idx = int(np.abs(self.lons - lon).argmin())
+            time_idx = int(hours_since_start / 24.0) % self.n_times
 
-            u = float(point_data["uo"].values)
-            v = float(point_data["vo"].values)
+            u = float(self.uo_grid[time_idx, lat_idx, lon_idx])
+            v = float(self.vo_grid[time_idx, lat_idx, lon_idx])
             if math.isnan(u) or math.isnan(v):
                 return 0.0, 0.0
             return u, v
         except Exception:
-            # Fallback safely to 0.0 if out of ocean domain or missing
             return 0.0, 0.0
 
 

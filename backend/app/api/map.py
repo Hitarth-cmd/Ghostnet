@@ -146,8 +146,21 @@ def map_layers() -> dict:
                 "endpoint": "/api/v1/alerts/map/geojson",
                 "source": "OceanGuard Ecological Alert Engine",
             },
+            {
+                "id": "ocean_currents",
+                "endpoint": "/api/v1/map/currents",
+                "source": "Copernicus Marine Service (CMEMS) - Global Ocean Physics Analysis and Forecast",
+                "license": "E.U. Copernicus Marine Service (Open Access)",
+            },
         ]
     }
+
+
+@router.get("/currents")
+def map_currents(force_refresh: bool = False) -> dict:
+    """Real-time ocean surface current flow vectors from Copernicus Marine Service (CMEMS)."""
+    from app.drift.currents_service import fetch_cmems_ocean_currents
+    return fetch_cmems_ocean_currents(force_refresh=force_refresh)
 
 
 @router.get("/coral-reefs")

@@ -57,13 +57,13 @@ export default function DataSourcesModal({ isOpen, onClose }: DataSourcesModalPr
       cachedFile: "backend/data/demo_coastline.geojson",
     },
     {
-      title: "Ocean Surface Currents & Drift Forcing",
-      organization: "INCOIS (Indian National Centre for Ocean Information Services) & OpenDrift",
-      coverage: "Northern Indian Ocean (5°S–25°N, 60°E–100°E)",
-      license: "INCOIS Open Data / OpenDrift (GPL-2.0)",
-      url: "https://incois.gov.in / https://opendrift.github.io",
-      description: "Lagrangian particle drift trajectory simulator driven by ocean current vectors and windage factors (24h, 48h, 72h horizons).",
-      cachedFile: "backend/data/currents_grid.zarr",
+      title: "Ocean Surface Currents & Hydrodynamic Forcing",
+      organization: "Copernicus Marine Service (E.U. CMEMS) & INCOIS",
+      coverage: "Global & Northern Indian Ocean Basin (0.083° Physical Analysis & Forecast)",
+      license: "E.U. Copernicus Marine Open Data / CC-BY",
+      url: "https://marine.copernicus.eu",
+      description: "Real-time surface velocity fields (uo, vo variables at 0.5m depth) driving 60fps WebGL particle streamlines and Lagrangian drift forecasts.",
+      cachedFile: "backend/data/cached_cmems_currents.json",
     },
   ];
 

@@ -186,6 +186,9 @@ export const api = {
   mapExtendedMPAs: (): Promise<FeatureCollection> =>
     request<FeatureCollection>("/api/v1/map/extended-mpas"),
 
+  mapCurrents: (): Promise<{ source: string; dataset_id: string; timestamp: string; count: number; vectors: any[] }> =>
+    request("/api/v1/map/currents"),
+
   mapLayersMetadata: (): Promise<{ layers: any[] }> =>
     request<{ layers: any[] }>("/api/v1/map/layers"),
 

@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import maplibregl, { Map as MapLibreMap, NavigationControl } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { MapboxOverlay } from "@deck.gl/mapbox";
-import { ArcLayer, ScatterplotLayer, LineLayer } from "@deck.gl/layers";
+import { ArcLayer, ScatterplotLayer, LineLayer, PathLayer, PolygonLayer } from "@deck.gl/layers";
 import type { FeatureCollection } from "@/types";
+import { api } from "@/lib/api";
 
 export interface MapLayers {
   detections: FeatureCollection;
@@ -120,6 +121,7 @@ interface MapViewProps {
   visibleLayers: Record<string, boolean>;
   selectedDetectionId?: string | null;
   centerCoordinates?: [number, number] | null;
+  chatOverlayFC?: GeoJSON.FeatureCollection | null;
 }
 
 export default function MapView({
@@ -129,6 +131,7 @@ export default function MapView({
   visibleLayers,
   selectedDetectionId,
   centerCoordinates,
+  chatOverlayFC,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -141,6 +144,42 @@ export default function MapView({
   const [showDeck3DDriftArcs, setShowDeck3DDriftArcs] = useState(true);
   const [driftForecastTimeHour, setDriftForecastTimeHour] = useState<number>(72);
   const [animTime, setAnimTime] = useState<number>(0);
+
+  // Live CMEMS Currents state (initialized with STATIC_OCEAN_CURRENTS fallback for instant render)
+  const [currentsData, setCurrentsData] = useState<{
+    source: string;
+    dataset_id?: string;
+    isLive: boolean;
+    vectors: Array<{ from: [number, number]; to: [number, number]; speed: number; region?: string; u?: number; v?: number }>;
+  }>({
+    source: "Synthetic Oceanic Model (Fallback)",
+    isLive: false,
+    vectors: STATIC_OCEAN_CURRENTS,
+  });
+
+  // Fetch real-time Copernicus Marine (CMEMS) ocean currents from backend
+  useEffect(() => {
+    let isMounted = true;
+    api
+      .mapCurrents()
+      .then((res) => {
+        if (isMounted && res.vectors && res.vectors.length > 0) {
+          setCurrentsData({
+            source: res.source || "Copernicus Marine Service (CMEMS)",
+            dataset_id: res.dataset_id,
+            isLive: (res.source || "").toLowerCase().includes("copernicus"),
+            vectors: res.vectors,
+          });
+        }
+      })
+      .catch((err) => {
+        console.warn("[MapView] Could not fetch live CMEMS currents, using fallback field", err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Initialize MapLibre & deck.gl MapboxOverlay
   useEffect(() => {
@@ -201,11 +240,13 @@ export default function MapView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     layers,
+    currentsData,
     showDeckCurrents,
     showDeck3DDriftArcs,
     driftForecastTimeHour,
     animTime,
     selectedDetectionId,
+    chatOverlayFC,
   ]);
 
   function updateDeckLayers() {
@@ -213,10 +254,10 @@ export default function MapView({
 
     const deckLayers: any[] = [];
 
-    // 1. Deck.gl Animated Ocean Current Flow Vectors
+    // 1. Deck.gl Animated Ocean Current Flow Vectors (Live CMEMS or Fallback)
     if (showDeckCurrents) {
       // Calculate dynamic pulse offset
-      const currentLines = STATIC_OCEAN_CURRENTS.map((c, i) => {
+      const currentLines = currentsData.vectors.map((c, i) => {
         const offset = ((animTime + i * 0.05) % 1.0);
         // Interpolate flowing particle head
         const pLon = c.from[0] + (c.to[0] - c.from[0]) * offset;
@@ -343,6 +384,86 @@ export default function MapView({
         },
       })
     );
+
+    // 4. Chat overlay: route line, corridor polygon, hotspot markers
+    if (chatOverlayFC && chatOverlayFC.features.length > 0) {
+      const routeFeatures = chatOverlayFC.features.filter(
+        (f) => f.properties?.layer === "route"
+      );
+      const corridorFeatures = chatOverlayFC.features.filter(
+        (f) => f.properties?.layer === "corridor"
+      );
+      const hotspotFeatures = chatOverlayFC.features.filter(
+        (f) => f.properties?.layer === "hotspot"
+      );
+
+      // Route line
+      if (routeFeatures.length > 0) {
+        const routePaths = routeFeatures.map((f) => ({
+          path: (f.geometry as GeoJSON.LineString).coordinates,
+          width: 4,
+        }));
+        deckLayers.push(
+          new PathLayer({
+            id: "chat-route-path",
+            data: routePaths,
+            getPath: (d: any) => d.path,
+            getColor: [14, 165, 233, 230],   // sky-500
+            getWidth: 4,
+            widthUnits: "pixels",
+            widthMinPixels: 3,
+            pickable: false,
+          })
+        );
+      }
+
+      // Corridor polygon
+      if (corridorFeatures.length > 0) {
+        const corridorPolygons = corridorFeatures.map((f) => ({
+          contour: (f.geometry as GeoJSON.Polygon).coordinates[0],
+        }));
+        deckLayers.push(
+          new PolygonLayer({
+            id: "chat-corridor-fill",
+            data: corridorPolygons,
+            getPolygon: (d: any) => d.contour,
+            getFillColor: [14, 165, 233, 28],   // very translucent sky blue
+            getLineColor: [14, 165, 233, 120],
+            getLineWidth: 2,
+            lineWidthUnits: "pixels",
+            stroked: true,
+            filled: true,
+            pickable: false,
+          })
+        );
+      }
+
+      // Hotspot markers
+      if (hotspotFeatures.length > 0) {
+        const hotspotPoints = hotspotFeatures.map((f) => ({
+          coords: (f.geometry as GeoJSON.Point).coordinates,
+          count: f.properties?.count ?? 1,
+          object_class: f.properties?.object_class ?? "unknown",
+        }));
+        deckLayers.push(
+          new ScatterplotLayer({
+            id: "chat-hotspot-markers",
+            data: hotspotPoints,
+            getPosition: (d: any) => d.coords,
+            getRadius: (d: any) => 18000 + d.count * 4000,
+            radiusMinPixels: 10,
+            radiusMaxPixels: 40,
+            getFillColor: (d: any) =>
+              d.object_class.includes("ghost") ? [168, 85, 247, 220] : [251, 146, 60, 220],
+            stroked: true,
+            getLineColor: [255, 255, 255, 200],
+            getLineWidth: 2,
+            lineWidthUnits: "pixels",
+            pickable: true,
+          })
+        );
+      }
+    }
 
     deckOverlayRef.current.setProps({
       layers: deckLayers,
@@ -725,18 +846,28 @@ export default function MapView({
 
       {/* Floating Tactical Deck.gl & Time-Scrubber Control Toolbar (Bottom-Center) */}
       <div className="pointer-events-auto absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3 rounded-2xl border border-sky-500/25 bg-slate-950/90 px-4 py-2.5 shadow-2xl backdrop-blur-md">
-        {/* Ocean Current Flow Toggle */}
+        {/* Ocean Current Flow Toggle with Live CMEMS Badge */}
         <button
           onClick={() => setShowDeckCurrents((prev) => !prev)}
-          className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+          className={`flex items-center gap-2 rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
             showDeckCurrents
               ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm shadow-cyan-500/20"
               : "text-slate-400 hover:text-slate-200 border border-slate-800"
           }`}
-          title="Toggle WebGL Animated Ocean Current Particle Streamlines"
+          title={
+            currentsData.isLive
+              ? `Live Copernicus Marine Service (${currentsData.vectors.length} hydrodynamic vectors active)`
+              : "Toggle Animated Ocean Current Particle Streamlines"
+          }
         >
           <span className={showDeckCurrents ? "animate-pulse" : ""}>🌊</span>
-          <span>Ocean Current Flow</span>
+          <span>{currentsData.isLive ? "CMEMS Ocean Flow" : "Ocean Current Flow"}</span>
+          {currentsData.isLive && (
+            <span className="flex items-center gap-1 rounded bg-emerald-950/80 border border-emerald-500/40 px-1 py-0.2 text-[9px] font-bold text-emerald-400 tracking-wider">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
+              LIVE
+            </span>
+          )}
         </button>
 
         {/* 3D Drift Arcs Toggle */}

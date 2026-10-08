@@ -46,15 +46,19 @@ def analyze_detection(db: Session, detection_id: str) -> AnalysisResult:
     logger.info("[DETECTION] id=%s external_id=%s starting analysis", detection.id, detection.external_id)
 
     # --- DRIFT AGENT ---
+    from app.config import get_settings
+    settings = get_settings()
+
     drift_request = DriftRequest(
         detection_id=detection.external_id,
         latitude=detection.latitude,
         longitude=detection.longitude,
         start_time=detection.timestamp,
+        ocean_data_provider=settings.OCEAN_DATA_PROVIDER,
     )
     drift_result = forecast_drift(drift_request)
-    logger.info("[DRIFT] id=%s horizons=%s mode=%s", detection.external_id,
-                [h.forecast_hour for h in drift_result.horizons], drift_result.mode)
+    logger.info("[DRIFT] id=%s horizons=%s mode=%s provider=%s", detection.external_id,
+                [h.forecast_hour for h in drift_result.horizons], drift_result.mode, settings.OCEAN_DATA_PROVIDER)
 
     # Persist each horizon as a Trajectory row.
     db.query(Trajectory).filter(Trajectory.detection_id == detection.id).delete()

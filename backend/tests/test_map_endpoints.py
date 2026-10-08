@@ -51,3 +51,17 @@ def test_map_risk_zones_only_shows_high_or_critical(client):
     body = r.json()
     for feature in body["features"]:
         assert feature["properties"]["risk_level"] in ("HIGH", "CRITICAL")
+
+
+def test_map_ocean_currents_endpoint(client):
+    r = client.get("/api/v1/map/currents")
+    assert r.status_code == 200
+    body = r.json()
+    assert "vectors" in body
+    assert "source" in body
+    assert body["count"] >= 0
+    if body["count"] > 0:
+        first = body["vectors"][0]
+        assert "from" in first
+        assert "to" in first
+        assert "speed" in first

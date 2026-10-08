@@ -10,6 +10,7 @@ import LayerToggle from "@/components/LayerToggle";
 import ResponderPortal from "@/components/ResponderPortal";
 import EcologicalAlertBanner from "@/components/EcologicalAlertBanner";
 import DataSourcesModal from "@/components/DataSourcesModal";
+import ChatWidget from "@/components/ChatWidget";
 
 // Dynamic import for MapLibre
 const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
@@ -39,6 +40,9 @@ export default function DashboardPage() {
   // Modals
   const [isResponderPortalOpen, setIsResponderPortalOpen] = useState(false);
   const [isDataSourcesOpen, setIsDataSourcesOpen] = useState(false);
+
+  // Chat overlay from Debris Route Assistant
+  const [chatOverlayFC, setChatOverlayFC] = useState<GeoJSON.FeatureCollection | null>(null);
 
   // Filters
   const [filterMode, setFilterMode] = useState<"all" | "actionable" | "review" | "assigned">("all");
@@ -165,6 +169,7 @@ export default function DashboardPage() {
           visibleLayers={visibleLayers}
           selectedDetectionId={selectedId}
           centerCoordinates={mapCenterCoords}
+          chatOverlayFC={chatOverlayFC}
         />
       </div>
 
@@ -293,6 +298,31 @@ export default function DashboardPage() {
         isOpen={isDataSourcesOpen}
         onClose={() => setIsDataSourcesOpen(false)}
       />
+
+      {/* 8. Vessel Debris Route Chatbot */}
+      <ChatWidget
+        onRouteDrawn={(fc) => setChatOverlayFC(fc)}
+      />
+
+      {/* Clear chat overlay button — shown only when a route is drawn */}
+      {chatOverlayFC && (
+        <button
+          id="chat-clear-route-btn"
+          onClick={() => setChatOverlayFC(null)}
+          className="
+            fixed bottom-[6.5rem] right-[430px] z-40 flex items-center gap-1.5
+            rounded-full border border-sky-500/40 bg-slate-900/90 px-3 py-1.5
+            text-[11px] font-semibold text-sky-300 shadow-lg backdrop-blur
+            transition hover:bg-slate-800
+          "
+          title="Clear route overlay from map"
+        >
+          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          Clear Route
+        </button>
+      )}
     </main>
   );
 }
