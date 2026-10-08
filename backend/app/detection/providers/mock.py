@@ -20,7 +20,7 @@ _ANCHORS = [
     ("Kochi offshore", 9.80, 75.60),
     ("Chennai offshore", 13.15, 80.95),
     ("Visakhapatnam offshore", 17.50, 84.10),
-    ("Gulf of Mannar waters", 8.85, 79.45),
+    ("Mangalore offshore", 12.85, 74.45),
     ("Sundarbans offshore", 21.10, 89.05),
     ("Lakshadweep waters", 10.55, 72.45),
     ("Gujarat offshore (Kutch)", 22.10, 68.60),

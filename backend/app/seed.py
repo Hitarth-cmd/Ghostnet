@@ -30,10 +30,12 @@ def seed_demo_data(db: Session) -> int:
                 existing.latitude = record.latitude
                 existing.longitude = record.longitude
                 existing.geometry = record.geometry
-                # Clear outdated trajectories and reports so pipeline recalculates them in water
+                # Clear outdated trajectories, alerts, and reports so pipeline recalculates them in water
+                from app.models.alert import EcologicalAlert
                 db.query(Trajectory).filter(Trajectory.detection_id == existing.id).delete()
                 db.query(RiskAssessment).filter(RiskAssessment.detection_id == existing.id).delete()
                 db.query(Report).filter(Report.detection_id == existing.id).delete()
+                db.query(EcologicalAlert).filter(EcologicalAlert.detection_id == existing.id).delete()
             continue
         db.add(
             Detection(
