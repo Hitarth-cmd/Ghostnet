@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 import { api } from "@/lib/api";
 import type { Detection, EcologicalAlert, FeatureCollection } from "@/types";
 import DetectionPanel from "@/components/DetectionPanel";
-import StatsBar from "@/components/StatsBar";
 import LayerToggle from "@/components/LayerToggle";
 import ResponderPortal from "@/components/ResponderPortal";
 import EcologicalAlertBanner from "@/components/EcologicalAlertBanner";
@@ -234,15 +233,8 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* 3. Top-Center Global Overview & Alert Ticker */}
+      {/* 3. Top-Center Alert Ticker */}
       <div className="pointer-events-none absolute left-1/2 top-4 z-20 flex -translate-x-1/2 flex-col items-center gap-2">
-        <StatsBar
-          detections={detections}
-          ecologicalAlerts={ecologicalAlerts}
-          onOpenResponderPortal={() => setIsResponderPortalOpen(true)}
-          onOpenDataSources={() => setIsDataSourcesOpen(true)}
-        />
-
         <div className="pointer-events-auto w-full">
           <EcologicalAlertBanner
             alerts={ecologicalAlerts}
