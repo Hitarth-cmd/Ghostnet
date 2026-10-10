@@ -57,31 +57,15 @@ def seed_demo_data(db: Session) -> int:
 
     db.commit()
 
-    # 2. Seed demo users (NGOs, Responders, Researchers, Admins)
+    # 2. Seed demo users (NGO and Admin)
     demo_users = [
         {
             "email": "responder@oceanguard.org",
             "password": "responder123",
             "full_name": "Dr. Anya Sharma",
             "organization": "Ocean Guardians Marine NGO",
-            "role": "responder",
+            "role": "ngo",
             "phone": "+91-98765-43210",
-        },
-        {
-            "email": "cleanup@marinerescue.org",
-            "password": "cleanup123",
-            "full_name": "Captain Vikram Rao",
-            "organization": "Rapid Marine Cleanup Taskforce",
-            "role": "responder",
-            "phone": "+91-98111-22334",
-        },
-        {
-            "email": "researcher@incois.gov.in",
-            "password": "researcher123",
-            "full_name": "Priya Nair",
-            "organization": "INCOIS Ocean Observation",
-            "role": "researcher",
-            "phone": "+91-98222-33445",
         },
         {
             "email": "admin@oceanguard.org",

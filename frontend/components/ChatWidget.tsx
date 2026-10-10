@@ -38,11 +38,13 @@ interface Message {
 /* ── Props ───────────────────────────────────────────────────────────────── */
 interface ChatWidgetProps {
   onRouteDrawn?: (geojson: GeoJSON.FeatureCollection | null) => void;
+  theme?: "light" | "dark";
 }
 
 /* ─────────────────────────────────────────────────────────────────────────── */
 
-export default function ChatWidget({ onRouteDrawn }: ChatWidgetProps) {
+export default function ChatWidget({ onRouteDrawn, theme = "light" }: ChatWidgetProps) {
+  const isLight = theme === "light";
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -154,22 +156,32 @@ export default function ChatWidget({ onRouteDrawn }: ChatWidgetProps) {
       parts.push(`📅 ${q.date_label || q.date}`);
     if (!parts.length) return null;
     return (
-      <div className="mt-2 rounded-lg border border-sky-500/20 bg-sky-950/40 px-3 py-2 text-[10px] text-sky-300">
-        <div className="mb-1 font-bold uppercase tracking-wider text-sky-400/70">
+      <div className={`mt-2 rounded-lg border px-3 py-2 text-[10px] ${
+        isLight
+          ? "border-sky-200 bg-sky-50 text-sky-900"
+          : "border-sky-500/20 bg-sky-950/40 text-sky-300"
+      }`}>
+        <div className={`mb-1 font-bold uppercase tracking-wider ${
+          isLight ? "text-sky-700" : "text-sky-400/70"
+        }`}>
           Understood as
         </div>
         <div className="flex flex-wrap gap-2">
           {parts.map((p) => (
             <span
               key={p}
-              className="rounded bg-sky-900/60 px-1.5 py-0.5 text-sky-200"
+              className={`rounded px-1.5 py-0.5 ${
+                isLight ? "bg-sky-100 text-sky-800 font-medium" : "bg-sky-900/60 text-sky-200"
+              }`}
             >
               {p}
             </span>
           ))}
         </div>
         {resp.summary && (
-          <div className="mt-1.5 font-semibold text-sky-300">
+          <div className={`mt-1.5 font-semibold ${
+            isLight ? "text-sky-800" : "text-sky-300"
+          }`}>
             {resp.summary.total_debris} detection(s) found · {resp.summary.ghost_nets} ghost net(s)
           </div>
         )}
@@ -188,7 +200,7 @@ export default function ChatWidget({ onRouteDrawn }: ChatWidgetProps) {
           fixed bottom-6 right-[430px] z-40 flex h-14 w-14 items-center justify-center
           rounded-full shadow-2xl ring-2 transition-all duration-300
           ${isOpen
-            ? "bg-slate-800 ring-slate-600 hover:bg-slate-700"
+            ? isLight ? "bg-slate-700 ring-slate-400 text-white hover:bg-slate-800" : "bg-slate-800 ring-slate-600 hover:bg-slate-700"
             : "bg-gradient-to-br from-sky-500 to-teal-400 ring-sky-400/60 hover:scale-110"
           }
         `}
@@ -196,7 +208,7 @@ export default function ChatWidget({ onRouteDrawn }: ChatWidgetProps) {
         aria-label="Toggle chat widget"
       >
         {isOpen ? (
-          <svg className="h-6 w-6 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="h-6 w-6 text-slate-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         ) : (
@@ -219,15 +231,22 @@ export default function ChatWidget({ onRouteDrawn }: ChatWidgetProps) {
       {isOpen && (
         <div
           id="chat-widget-panel"
-          className="
+          className={`
             fixed bottom-24 right-[430px] z-40 flex h-[540px] w-[380px]
-            flex-col overflow-hidden rounded-2xl border border-slate-700/80
-            bg-slate-950/98 shadow-2xl backdrop-blur-xl
-          "
-          style={{ boxShadow: "0 0 60px rgba(14,165,233,0.15), 0 25px 60px rgba(0,0,0,0.6)" }}
+            flex-col overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-xl transition-colors
+            ${isLight
+              ? "border-slate-200/90 bg-white/98 text-slate-800 shadow-slate-900/15"
+              : "border-slate-700/80 bg-slate-950/98 text-slate-100"
+            }
+          `}
+          style={{ boxShadow: isLight ? "0 20px 45px rgba(0,0,0,0.1), 0 0 30px rgba(14,165,233,0.1)" : "0 0 60px rgba(14,165,233,0.15), 0 25px 60px rgba(0,0,0,0.6)" }}
         >
           {/* Header */}
-          <div className="flex items-center gap-3 border-b border-slate-800 bg-gradient-to-r from-sky-950/80 to-teal-950/50 px-4 py-3">
+          <div className={`flex items-center gap-3 border-b px-4 py-3 ${
+            isLight
+              ? "border-slate-200 bg-gradient-to-r from-sky-50 to-teal-50"
+              : "border-slate-800 bg-gradient-to-r from-sky-950/80 to-teal-950/50"
+          }`}>
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-teal-400">
               <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -236,14 +255,14 @@ export default function ChatWidget({ onRouteDrawn }: ChatWidgetProps) {
               </svg>
             </div>
             <div>
-              <div className="text-sm font-bold text-slate-100">Debris Route Assistant</div>
-              <div className="text-[10px] text-slate-400">
+              <div className={`text-sm font-bold ${isLight ? "text-slate-900" : "text-slate-100"}`}>Debris Route Assistant</div>
+              <div className={`text-[10px] ${isLight ? "text-slate-500" : "text-slate-400"}`}>
                 {userLocation ? "📡 GPS location available" : "Route query · Real detection data"}
               </div>
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="ml-auto text-slate-500 transition hover:text-slate-300"
+              className={`ml-auto transition ${isLight ? "text-slate-400 hover:text-slate-700" : "text-slate-500 hover:text-slate-300"}`}
               aria-label="Close chat"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -253,7 +272,7 @@ export default function ChatWidget({ onRouteDrawn }: ChatWidgetProps) {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-thin scrollbar-thumb-slate-700">
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
             {messages.map((msg) => (
               <div
                 key={msg.id}
@@ -263,14 +282,16 @@ export default function ChatWidget({ onRouteDrawn }: ChatWidgetProps) {
                   className={`
                     max-w-[90%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed
                     ${msg.role === "user"
-                      ? "rounded-br-sm bg-sky-600 text-white"
+                      ? "rounded-br-sm bg-sky-600 text-white shadow-sm"
                       : msg.role === "error"
-                      ? "rounded-bl-sm border border-red-500/40 bg-red-950/60 text-red-300"
-                      : "rounded-bl-sm border border-slate-700/60 bg-slate-800/80 text-slate-200"
+                      ? isLight ? "rounded-bl-sm border border-red-200 bg-red-50 text-red-800" : "rounded-bl-sm border border-red-500/40 bg-red-950/60 text-red-300"
+                      : isLight ? "rounded-bl-sm border border-slate-200 bg-slate-50 text-slate-800 shadow-sm" : "rounded-bl-sm border border-slate-700/60 bg-slate-800/80 text-slate-200"
                     }
                   `}
                 >
-                  <div className="prose prose-invert prose-sm max-w-none prose-p:my-0.5 prose-ul:my-0.5 prose-li:my-0">
+                  <div className={`prose prose-sm max-w-none prose-p:my-0.5 prose-ul:my-0.5 prose-li:my-0 ${
+                    isLight && msg.role !== "user" ? "text-slate-800" : "prose-invert"
+                  }`}>
                     <ReactMarkdown>{msg.text}</ReactMarkdown>
                   </div>
                   {msg.response && <ParsedCard resp={msg.response} />}
@@ -281,9 +302,11 @@ export default function ChatWidget({ onRouteDrawn }: ChatWidgetProps) {
             {/* Typing indicator */}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="rounded-2xl rounded-bl-sm border border-slate-700/60 bg-slate-800/80 px-4 py-3">
+                <div className={`rounded-2xl rounded-bl-sm border px-4 py-3 ${
+                  isLight ? "border-slate-200 bg-slate-50 text-slate-600" : "border-slate-700/60 bg-slate-800/80 text-slate-400"
+                }`}>
                   <div className="flex gap-1.5 items-center">
-                    <span className="text-[11px] text-slate-400 mr-1">Querying debris data</span>
+                    <span className="text-[11px] mr-1">Querying debris data</span>
                     {[0, 1, 2].map((i) => (
                       <span
                         key={i}
@@ -305,11 +328,14 @@ export default function ChatWidget({ onRouteDrawn }: ChatWidgetProps) {
                   <button
                     key={s}
                     onClick={() => sendMessage(s)}
-                    className="
-                      w-full rounded-xl border border-sky-600/30 bg-sky-950/40 px-3 py-2
-                      text-left text-[11px] text-sky-300 transition
-                      hover:border-sky-500/60 hover:bg-sky-900/40
-                    "
+                    className={`
+                      w-full rounded-xl border px-3 py-2
+                      text-left text-[11px] transition
+                      ${isLight
+                        ? "border-sky-200 bg-sky-50/80 text-sky-800 hover:border-sky-300 hover:bg-sky-100"
+                        : "border-sky-600/30 bg-sky-950/40 text-sky-300 hover:border-sky-500/60 hover:bg-sky-900/40"
+                      }
+                    `}
                   >
                     💬 {s}
                   </button>
@@ -321,8 +347,14 @@ export default function ChatWidget({ onRouteDrawn }: ChatWidgetProps) {
           </div>
 
           {/* Input area */}
-          <div className="border-t border-slate-800 bg-slate-900/60 px-3 py-2.5">
-            <div className="flex items-end gap-2 rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2 focus-within:border-sky-500/60 focus-within:ring-1 focus-within:ring-sky-500/30 transition">
+          <div className={`border-t px-3 py-2.5 ${
+            isLight ? "border-slate-200 bg-slate-50/90" : "border-slate-800 bg-slate-900/60"
+          }`}>
+            <div className={`flex items-end gap-2 rounded-xl border px-3 py-2 transition ${
+              isLight
+                ? "border-slate-300 bg-white focus-within:border-sky-500 focus-within:ring-1 focus-within:ring-sky-500/30"
+                : "border-slate-700 bg-slate-800/80 focus-within:border-sky-500/60 focus-within:ring-1 focus-within:ring-sky-500/30"
+            }`}>
               <textarea
                 ref={inputRef}
                 id="chat-input"
@@ -331,7 +363,9 @@ export default function ChatWidget({ onRouteDrawn }: ChatWidgetProps) {
                 onKeyDown={handleKey}
                 placeholder="Describe your route… e.g. 'Leaving Mundra tomorrow, heading west 40 km'"
                 rows={2}
-                className="flex-1 resize-none bg-transparent text-[13px] text-slate-200 placeholder-slate-500 outline-none scrollbar-none"
+                className={`flex-1 resize-none bg-transparent text-[13px] outline-none scrollbar-none ${
+                  isLight ? "text-slate-800 placeholder-slate-400" : "text-slate-200 placeholder-slate-500"
+                }`}
                 disabled={isLoading}
                 aria-label="Chat message input"
               />
@@ -352,7 +386,7 @@ export default function ChatWidget({ onRouteDrawn }: ChatWidgetProps) {
                 </svg>
               </button>
             </div>
-            <div className="mt-1.5 text-center text-[9px] text-slate-600">
+            <div className={`mt-1.5 text-center text-[9px] ${isLight ? "text-slate-500" : "text-slate-600"}`}>
               Real detection data · No AI fabrication · Press Enter to send
             </div>
           </div>
