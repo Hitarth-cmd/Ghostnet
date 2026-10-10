@@ -15,6 +15,7 @@ interface LayerItem {
 }
 
 const LAYERS: LayerItem[] = [
+  { key: "oceanCurrents", label: "Ocean Current Flow", badge: "CMEMS Live", color: "bg-cyan-400" },
   { key: "detections", label: "Debris Detections", badge: "AI / SAR", color: "bg-red-500" },
   { key: "trajectories", label: "Drift Cones (24h/48h/72h)", badge: "OpenDrift", color: "bg-yellow-400" },
   { key: "coralReefs", label: "Coral Reefs", badge: "UNEP-WCMC", color: "bg-cyan-400" },

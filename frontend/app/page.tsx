@@ -86,6 +86,7 @@ export default function DashboardPage() {
 
   // Visible Layers
   const [visibleLayers, setVisibleLayers] = useState<Record<string, boolean>>({
+    oceanCurrents: true,
     detections: true,
     trajectories: true,
     coralReefs: true,
