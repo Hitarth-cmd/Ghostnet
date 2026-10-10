@@ -168,3 +168,84 @@ export interface DataSourceItem {
   source: string;
   license?: string;
 }
+
+export interface MarineModelInfo {
+  status: string;
+  model_name: string;
+  checkpoint_file: string;
+  checkpoint_path: string;
+  checkpoint_exists: boolean;
+  checkpoint_size_mb: number;
+  val_mIoU: number;
+  val_mIoU_percentage: string;
+  best_epoch: number;
+  input_channels: number;
+  num_classes: number;
+  classes: string[];
+  class_palette: string[];
+  framework: string;
+}
+
+export interface ClassBreakdownItem {
+  class_id: number;
+  name: string;
+  pixel_count: number;
+  percentage: number;
+  area_m2: number;
+  area_km2: number;
+  color: string;
+}
+
+export interface MarinePredictionSummary {
+  debris_pixel_count: number;
+  debris_area_m2: number;
+  debris_area_km2: number;
+  debris_percentage: number;
+  debris_mean_confidence: number;
+  sargassum_pixel_count: number;
+  ship_pixel_count: number;
+  severity_level: "CRITICAL" | "HIGH" | "MODERATE" | "LOW";
+  recommended_action: string;
+  image_dimensions: { width: number; height: number };
+  pixel_resolution_meters: number;
+}
+
+export interface MarinePredictionResult {
+  status: string;
+  filename?: string;
+  sample_name?: string;
+  is_geotiff?: boolean;
+  georeferencing?: any;
+  summary: MarinePredictionSummary;
+  class_breakdown: ClassBreakdownItem[];
+  visualizations: {
+    rgb_quicklook: string;
+    segmentation_mask: string;
+    debris_overlay: string;
+  };
+  created_detections?: Array<{
+    id: string;
+    external_id: string;
+    latitude: number;
+    longitude: number;
+    area_m2: number;
+    confidence: number;
+  }>;
+}
+
+export interface SatellitePreviewResponse {
+  external_id: string;
+  region_name?: string;
+  scene_id: string;
+  acquisition_date?: string;
+  cloud_coverage_pct?: number;
+  source: string;
+  project_id?: string;
+  summary: MarinePredictionSummary;
+  class_breakdown: ClassBreakdownItem[];
+  visualizations: {
+    rgb_quicklook: string;
+    segmentation_mask: string;
+    debris_overlay: string;
+  };
+}

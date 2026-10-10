@@ -47,16 +47,19 @@ class GeoRaster:
 
 
 def load_geotiff(path: str) -> tuple[np.ndarray, GeoRaster]:
-    """Read a GeoTIFF's first band plus its CRS/transform/bounds/size."""
+    """Read a GeoTIFF's bands plus its CRS/transform/bounds/size."""
     import rasterio
 
     if not os.path.exists(path):
         raise FileNotFoundError(f"GeoTIFF not found: {path}")
 
     with rasterio.open(path) as src:
-        band = src.read(1)
+        if src.count > 1:
+            data = src.read()
+        else:
+            data = src.read(1)
         raster = GeoRaster(transform=src.transform, crs=src.crs, width=src.width, height=src.height)
-    return band, raster
+    return data, raster
 
 
 def pixel_to_lonlat(row: int, col: int, raster: GeoRaster) -> tuple[float, float]:
@@ -162,39 +165,27 @@ class Sentinel2ModelProvider(DetectionProvider):
     name = "sentinel2"
 
     def __init__(self, checkpoint_path: str | None = None) -> None:
-        self.checkpoint_path = checkpoint_path or os.environ.get("MODEL_CHECKPOINT_PATH", "")
+        from app.detection.model_architecture import get_default_checkpoint_path
+        self.checkpoint_path = checkpoint_path or os.environ.get("MODEL_CHECKPOINT_PATH", "") or get_default_checkpoint_path()
         self._model = None
 
     def _ensure_configured(self) -> None:
         if not self.checkpoint_path or not os.path.exists(self.checkpoint_path):
             raise ModelNotConfiguredError(
-                "MODEL_PROVIDER=sentinel2 but no trained checkpoint was found. "
-                "Set MODEL_CHECKPOINT_PATH to your trained model file and implement "
-                "Sentinel2ModelProvider._load_model / _run_model_inference for your "
-                "model's framework. See README.md 'Model integration' for the exact "
-                "steps. Until then, use MODEL_PROVIDER=mock."
+                f"MODEL_PROVIDER=sentinel2 but checkpoint was not found at '{self.checkpoint_path}'. "
+                "Ensure segmentation_best.pth is located in the project root or set MODEL_CHECKPOINT_PATH."
             )
 
-    def _load_model(self):  # pragma: no cover - integration point
-        """
-        Load your trained checkpoint here (e.g. torch.load(...).eval()).
-        Left unimplemented on purpose: this repository does not ship or
-        fabricate a trained marine-debris segmentation model.
-        """
-        raise ModelNotConfiguredError(
-            "Sentinel2ModelProvider._load_model is not implemented. "
-            "Implement model loading for your framework, then remove this guard."
-        )
+    def _load_model(self):
+        from app.detection.model_architecture import load_model
+        return load_model(self.checkpoint_path)
 
-    def _run_model_inference(self, image_band: np.ndarray) -> tuple[np.ndarray, np.ndarray]:  # pragma: no cover
-        """
-        Run your trained model on `image_band` and return (binary_mask,
-        confidence_map), both same shape as image_band. Left unimplemented
-        on purpose - see class docstring.
-        """
-        raise ModelNotConfiguredError(
-            "Sentinel2ModelProvider._run_model_inference is not implemented."
-        )
+    def _run_model_inference(self, image_band: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        from app.detection.model_architecture import predict_marine_debris
+        res = predict_marine_debris(image_band)
+        binary_mask = (res["raw_mask"] == 0).astype(np.uint8)
+        confidence_map = res["debris_confidence_map"]
+        return binary_mask, confidence_map
 
     def run_on_geotiff(self, path: str) -> list[DetectionRecord]:
         self._ensure_configured()

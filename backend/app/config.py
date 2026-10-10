@@ -43,6 +43,8 @@ class Settings(BaseSettings):
     # Detection provider: "mock" (default, always works) or "sentinel2"
     # (requires a real trained model - see README "Model integration").
     MODEL_PROVIDER: Literal["mock", "sentinel2"] = "mock"
+    MODEL_CHECKPOINT_PATH: str = "segmentation_best.pth"
+    EE_PROJECT_ID: str = "balmy-ocean-509105-v8"
 
     # Ocean forcing provider for the drift engine.
     OCEAN_DATA_PROVIDER: Literal["demo", "cmems", "era5", "gfs"] = "demo"

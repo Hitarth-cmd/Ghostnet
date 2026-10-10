@@ -194,4 +194,65 @@ export const api = {
 
   systemStatus: (): Promise<Record<string, unknown>> =>
     request<Record<string, unknown>>("/api/v1/system/status"),
+
+  // Marine Debris Model AI Scanner
+  getModelInfo: (): Promise<import("@/types").MarineModelInfo> =>
+    request<import("@/types").MarineModelInfo>("/api/v1/inference/model-info"),
+
+  runSampleTest: (): Promise<import("@/types").MarinePredictionResult> =>
+    request<import("@/types").MarinePredictionResult>("/api/v1/inference/sample-test", {
+      method: "POST",
+    }),
+
+  predictMarineDebris: async (formData: FormData): Promise<import("@/types").MarinePredictionResult> => {
+    const res = await fetch(`${API_BASE}/api/v1/inference/predict`, {
+      method: "POST",
+      body: formData,
+      headers: {
+        ...getAuthHeader(),
+      },
+    });
+    if (!res.ok) {
+      let err = "";
+      try {
+        const j = await res.json();
+        err = j.detail || JSON.stringify(j);
+      } catch {
+        err = await res.text().catch(() => "");
+      }
+      throw new Error(`Inference API error (${res.status}): ${err || res.statusText}`);
+    }
+    return res.json();
+  },
+
+  // Google Earth Engine Sentinel-2 API (balmy-ocean-509105-v8)
+  getEarthEngineStatus: (): Promise<any> =>
+    request("/api/v1/earthengine/status"),
+
+  getEarthEngineRegions: (): Promise<{ project_id: string; regions: any[] }> =>
+    request("/api/v1/earthengine/regions"),
+
+  scanEarthEngine: (payload: {
+    latitude: number;
+    longitude: number;
+    pixel_size_meters?: number;
+    plot_to_map?: boolean;
+  }): Promise<import("@/types").MarinePredictionResult & { gee_metadata?: any }> =>
+    request("/api/v1/earthengine/scan", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  syncEarthEngineCatalog: (): Promise<{
+    status: string;
+    message: string;
+    project_id: string;
+    active_detections: number;
+  }> =>
+    request("/api/v1/earthengine/sync-catalog", {
+      method: "POST",
+    }),
+
+  getSatellitePreview: (detectionId: string): Promise<import("@/types").SatellitePreviewResponse> =>
+    request(`/api/v1/earthengine/preview/${detectionId}`),
 };
