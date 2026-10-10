@@ -187,7 +187,7 @@ export default function MapView({
   const [showDeckCurrents, setShowDeckCurrents] = useState(true);
   const [showDeck3DDriftArcs, setShowDeck3DDriftArcs] = useState(true);
   const [driftForecastTimeHour, setDriftForecastTimeHour] = useState<number>(72);
-  const [animTime, setAnimTime] = useState<number>(0);
+  const animTimeRef = useRef<number>(0);
 
   // Live CMEMS Currents state (initialized with STATIC_OCEAN_CURRENTS fallback for instant render)
   const [currentsData, setCurrentsData] = useState<{
@@ -200,6 +200,44 @@ export default function MapView({
     isLive: false,
     vectors: STATIC_OCEAN_CURRENTS,
   });
+
+  // Track latest props & state in ref for 60fps animation without triggering React re-renders
+  const stateRef = useRef({
+    layers,
+    currentsData,
+    showDeckCurrents,
+    showDeck3DDriftArcs,
+    driftForecastTimeHour,
+    selectedDetectionId,
+    chatOverlayFC,
+    isLight,
+    visibleLayers,
+  });
+
+  useEffect(() => {
+    stateRef.current = {
+      layers,
+      currentsData,
+      showDeckCurrents,
+      showDeck3DDriftArcs,
+      driftForecastTimeHour,
+      selectedDetectionId,
+      chatOverlayFC,
+      isLight,
+      visibleLayers,
+    };
+    updateDeckLayers(animTimeRef.current);
+  }, [
+    layers,
+    currentsData,
+    showDeckCurrents,
+    showDeck3DDriftArcs,
+    driftForecastTimeHour,
+    selectedDetectionId,
+    chatOverlayFC,
+    isLight,
+    visibleLayers,
+  ]);
 
   // Fetch real-time Copernicus Marine (CMEMS) ocean currents from backend
   useEffect(() => {
@@ -253,15 +291,16 @@ export default function MapView({
     map.on("load", () => {
       loadedRef.current = true;
       setupMapLibreLayers(map, layers);
-      updateDeckLayers();
+      updateDeckLayers(0);
     });
 
-    // Start continuous particle animation loop
+    // Start continuous particle animation loop (direct to WebGL, no React re-render overhead)
     let lastT = performance.now();
     const animate = (now: number) => {
-      const dt = (now - lastT) / 1000;
+      const dt = Math.min((now - lastT) / 1000, 0.1);
       lastT = now;
-      setAnimTime((prev) => (prev + dt * 0.4) % 1.0);
+      animTimeRef.current = (animTimeRef.current + dt * 0.45) % 1000.0;
+      updateDeckLayers(animTimeRef.current);
       animFrameRef.current = requestAnimationFrame(animate);
     };
     animFrameRef.current = requestAnimationFrame(animate);
@@ -287,68 +326,124 @@ export default function MapView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [theme]);
 
-  // Update deck.gl layers when data, animation, or visibility changes
-  useEffect(() => {
-    updateDeckLayers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    layers,
-    currentsData,
-    showDeckCurrents,
-    showDeck3DDriftArcs,
-    driftForecastTimeHour,
-    animTime,
-    selectedDetectionId,
-    chatOverlayFC,
-    theme,
-  ]);
+  // Dynamic speed-based color mapping for ocean currents
+  function getVelocityColor(speed: number, lightTheme: boolean): [number, number, number, number] {
+    if (speed < 0.22) {
+      // Gentle calm drift: Deep ocean blue / Cyan
+      return lightTheme ? [2, 132, 199, 210] : [56, 189, 248, 220];
+    } else if (speed < 0.52) {
+      // Moderate oceanic flow: Electric turquoise / Emerald
+      return lightTheme ? [13, 148, 136, 235] : [45, 212, 191, 235];
+    } else {
+      // Swift jet / Somali current / Equatorial jet: Glowing Amber / Sea-coral
+      return lightTheme ? [234, 88, 12, 245] : [251, 146, 60, 255];
+    }
+  }
 
-  function updateDeckLayers() {
+  function updateDeckLayers(currentAnimTime: number = animTimeRef.current) {
     if (!deckOverlayRef.current) return;
+    const {
+      layers: curLayers,
+      currentsData: curData,
+      showDeckCurrents: curShowCurrents,
+      showDeck3DDriftArcs: curShowArcs,
+      driftForecastTimeHour: curDriftHour,
+      selectedDetectionId: curSelId,
+      chatOverlayFC: curChatFC,
+      isLight: curIsLight,
+      visibleLayers: curVisLayers,
+    } = stateRef.current;
 
     const deckLayers: any[] = [];
+    const isCurrentsActive = (curVisLayers.oceanCurrents !== undefined ? curVisLayers.oceanCurrents : curShowCurrents);
 
-    // 1. Deck.gl Animated Ocean Current Flow Vectors (Live CMEMS or Fallback)
-    if (showDeckCurrents) {
-      // Calculate dynamic pulse offset
-      const currentLines = currentsData.vectors.map((c, i) => {
-        const offset = ((animTime + i * 0.05) % 1.0);
-        // Interpolate flowing particle head
-        const pLon = c.from[0] + (c.to[0] - c.from[0]) * offset;
-        const pLat = c.from[1] + (c.to[1] - c.from[1]) * offset;
-        return {
-          ...c,
-          head: [pLon, pLat],
-        };
+    // 1. Deck.gl Dynamic Fluid Ocean Current Streamlines & Particles (Live CMEMS)
+    if (isCurrentsActive) {
+      const streamLines: any[] = [];
+      const flowingStreaks: any[] = [];
+      const particleHeads: any[] = [];
+
+      curData.vectors.forEach((c, i) => {
+        const velColor = getVelocityColor(c.speed, curIsLight);
+        const dx = c.to[0] - c.from[0];
+        const dy = c.to[1] - c.from[1];
+
+        // Background subtle streamline trace
+        streamLines.push({
+          from: c.from,
+          to: c.to,
+          color: curIsLight ? [186, 230, 253, 110] : [6, 182, 212, 40],
+        });
+
+        // 2 phase-staggered particles per vector for continuous fluid density
+        const phases = [0.0, 0.5];
+        phases.forEach((phase) => {
+          const speedMultiplier = 0.7 + Math.min(1.8, c.speed * 2.2);
+          const offset = ((currentAnimTime * speedMultiplier + i * 0.07 + phase) % 1.0);
+
+          const headLon = c.from[0] + dx * offset;
+          const headLat = c.from[1] + dy * offset;
+
+          // Comet tail trailing behind the head in vector direction
+          const tailFrac = 0.28;
+          const tailLon = headLon - dx * tailFrac;
+          const tailLat = headLat - dy * tailFrac;
+
+          flowingStreaks.push({
+            from: [tailLon, tailLat],
+            to: [headLon, headLat],
+            color: velColor,
+          });
+
+          particleHeads.push({
+            position: [headLon, headLat],
+            radius: 2.2 + Math.min(2.4, c.speed * 2.2),
+            color: velColor,
+          });
+        });
       });
 
-      // Flow background streamlines
+      // Ambient streamline trajectories
       deckLayers.push(
         new LineLayer({
-          id: "deck-ocean-current-lines",
-          data: currentLines,
+          id: "deck-ocean-streamlines",
+          data: streamLines,
           getSourcePosition: (d: any) => d.from,
           getTargetPosition: (d: any) => d.to,
-          getColor: isLight ? [224, 242, 254, 180] : [6, 182, 212, 45],
-          getWidth: 1.4,
+          getColor: (d: any) => d.color,
+          getWidth: 1.2,
           widthUnits: "pixels",
           pickable: false,
         })
       );
 
-      // Flow moving glowing particle heads (sleek, refined stream dots)
+      // Dynamic animated comet streaks
+      deckLayers.push(
+        new LineLayer({
+          id: "deck-ocean-flowing-streaks",
+          data: flowingStreaks,
+          getSourcePosition: (d: any) => d.from,
+          getTargetPosition: (d: any) => d.to,
+          getColor: (d: any) => d.color,
+          getWidth: 1.8,
+          widthUnits: "pixels",
+          pickable: false,
+        })
+      );
+
+      // Glowing flowing streamlet heads
       deckLayers.push(
         new ScatterplotLayer({
-          id: "deck-ocean-current-particles",
-          data: currentLines,
-          getPosition: (d: any) => d.head,
+          id: "deck-ocean-current-heads",
+          data: particleHeads,
+          getPosition: (d: any) => d.position,
           radiusUnits: "pixels",
-          getRadius: 2.6,
-          radiusMinPixels: 1.6,
-          radiusMaxPixels: 3.6,
-          getFillColor: isLight ? [14, 165, 233, 255] : [34, 211, 238, 220],
+          getRadius: (d: any) => d.radius,
+          radiusMinPixels: 1.8,
+          radiusMaxPixels: 4.8,
+          getFillColor: (d: any) => d.color,
           stroked: true,
-          getLineColor: [255, 255, 255, 240],
+          getLineColor: [255, 255, 255, 230],
           getLineWidth: 1,
           lineWidthUnits: "pixels",
           pickable: false,
@@ -357,25 +452,25 @@ export default function MapView({
     }
 
     // 2. Deck.gl 3D Elevated Parabolic Drift Arcs
-    if (showDeck3DDriftArcs && layers.trajectories) {
+    if (curShowArcs && curLayers.trajectories) {
       const arcData: any[] = [];
 
       // Extract trajectories grouped by detection
       const detCoordsMap = new Map<string, [number, number]>();
-      layers.detections.features.forEach((f) => {
+      curLayers.detections.features.forEach((f) => {
         detCoordsMap.set(f.properties.external_id, f.geometry.coordinates as [number, number]);
       });
 
-      layers.trajectories.features.forEach((f) => {
+      curLayers.trajectories.features.forEach((f) => {
         if (f.geometry.type === "LineString" && f.geometry.coordinates.length >= 2) {
           const detId = f.properties.detection_id;
           const forecastHour = f.properties.forecast_hour;
 
           // Only show up to current scrubber hour
-          if (forecastHour <= driftForecastTimeHour) {
+          if (forecastHour <= curDriftHour) {
             const start = f.geometry.coordinates[0];
             const end = f.geometry.coordinates[1];
-            const isSelected = detId === selectedDetectionId;
+            const isSelected = detId === curSelId;
 
             arcData.push({
               id: `${detId}-${forecastHour}`,
@@ -410,12 +505,12 @@ export default function MapView({
     }
 
     // 3. Deck.gl Glowing 3D Scatterplot Beacons on Detections
-    const detectionPoints = layers.detections.features.map((f) => ({
+    const detectionPoints = curLayers.detections.features.map((f) => ({
       coordinates: f.geometry.coordinates,
       external_id: f.properties.external_id,
       confidence: f.properties.confidence,
       status: f.properties.incident_status || f.properties.status,
-      isSelected: f.properties.external_id === selectedDetectionId,
+      isSelected: f.properties.external_id === curSelId,
     }));
 
     deckLayers.push(
@@ -443,14 +538,14 @@ export default function MapView({
     );
 
     // 4. Chat overlay: route line, corridor polygon, hotspot markers
-    if (chatOverlayFC && chatOverlayFC.features.length > 0) {
-      const routeFeatures = chatOverlayFC.features.filter(
+    if (curChatFC && curChatFC.features.length > 0) {
+      const routeFeatures = curChatFC.features.filter(
         (f) => f.properties?.layer === "route"
       );
-      const corridorFeatures = chatOverlayFC.features.filter(
+      const corridorFeatures = curChatFC.features.filter(
         (f) => f.properties?.layer === "corridor"
       );
-      const hotspotFeatures = chatOverlayFC.features.filter(
+      const hotspotFeatures = curChatFC.features.filter(
         (f) => f.properties?.layer === "hotspot"
       );
 
@@ -458,14 +553,13 @@ export default function MapView({
       if (routeFeatures.length > 0) {
         const routePaths = routeFeatures.map((f) => ({
           path: (f.geometry as GeoJSON.LineString).coordinates,
-          width: 4,
         }));
         deckLayers.push(
           new PathLayer({
             id: "chat-route-path",
             data: routePaths,
             getPath: (d: any) => d.path,
-            getColor: [14, 165, 233, 230],   // sky-500
+            getColor: [14, 165, 233, 230], // sky-500
             getWidth: 4,
             widthUnits: "pixels",
             widthMinPixels: 3,
@@ -484,7 +578,7 @@ export default function MapView({
             id: "chat-corridor-fill",
             data: corridorPolygons,
             getPolygon: (d: any) => d.contour,
-            getFillColor: [14, 165, 233, 28],   // very translucent sky blue
+            getFillColor: [14, 165, 233, 28], // very translucent sky blue
             getLineColor: [14, 165, 233, 120],
             getLineWidth: 2,
             lineWidthUnits: "pixels",
