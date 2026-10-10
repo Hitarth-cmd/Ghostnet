@@ -459,14 +459,14 @@ export default function ResponderPortal({
                 onClick={() => setActiveTab("actionable")}
                 className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
                   activeTab === "actionable"
-                    ? isLight ? "bg-sky-100 text-sky-800 border border-sky-300" : "bg-sky-500/20 text-sky-400 border border-sky-500/30"
-                    : isLight ? "text-slate-600 hover:text-slate-900" : "text-slate-400 hover:text-slate-200"
+                    ? isLight ? "bg-amber-100 text-amber-900 border border-amber-300 shadow-sm" : "bg-sky-500/20 text-sky-400 border border-sky-500/30"
+                    : isLight ? "text-slate-600 hover:text-slate-900 hover:bg-slate-100" : "text-slate-400 hover:text-slate-200"
                 }`}
               >
-                <span>⚡ High-Confidence Cleanup Alerts</span>
+                <span>High-Confidence Cleanup Alerts</span>
                 {inbox && (
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] ${
-                    isLight ? "bg-orange-100 text-orange-800" : "bg-orange-500/20 text-orange-300"
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                    isLight ? "bg-amber-200 text-amber-900" : "bg-orange-500/20 text-orange-300"
                   }`}>
                     {inbox.total_actionable}
                   </span>
@@ -477,14 +477,14 @@ export default function ResponderPortal({
                 onClick={() => setActiveTab("verification")}
                 className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
                   activeTab === "verification"
-                    ? isLight ? "bg-amber-100 text-amber-800 border border-amber-300" : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-                    : isLight ? "text-slate-600 hover:text-slate-900" : "text-slate-400 hover:text-slate-200"
+                    ? isLight ? "bg-amber-100 text-amber-900 border border-amber-300 shadow-sm" : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                    : isLight ? "text-slate-600 hover:text-slate-900 hover:bg-slate-100" : "text-slate-400 hover:text-slate-200"
                 }`}
               >
-                <span>🔍 Human Verification Queue (&lt;70%)</span>
+                <span>Human Verification Queue (&lt;70%)</span>
                 {inbox && (
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] ${
-                    isLight ? "bg-amber-100 text-amber-800" : "bg-amber-500/20 text-amber-300"
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                    isLight ? "bg-amber-200 text-amber-900" : "bg-amber-500/20 text-amber-300"
                   }`}>
                     {inbox.total_requiring_action}
                   </span>
@@ -495,13 +495,13 @@ export default function ResponderPortal({
                 onClick={() => setActiveTab("ecological")}
                 className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
                   activeTab === "ecological"
-                    ? isLight ? "bg-rose-100 text-rose-800 border border-rose-300" : "bg-rose-500/20 text-rose-400 border border-rose-500/30"
-                    : isLight ? "text-slate-600 hover:text-slate-900" : "text-slate-400 hover:text-slate-200"
+                    ? isLight ? "bg-rose-100 text-rose-900 border border-rose-300 shadow-sm" : "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                    : isLight ? "text-slate-600 hover:text-slate-900 hover:bg-slate-100" : "text-slate-400 hover:text-slate-200"
                 }`}
               >
-                <span>⚠️ Marine-Life & Ecological Alerts</span>
-                <span className={`rounded-full px-2 py-0.5 text-[10px] ${
-                  isLight ? "bg-rose-100 text-rose-800" : "bg-rose-500/20 text-rose-300"
+                <span>Marine-Life &amp; Ecological Alerts</span>
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                  isLight ? "bg-rose-200 text-rose-900" : "bg-rose-500/20 text-rose-300"
                 }`}>
                   {ecologicalAlerts.filter((a) => a.status === "active").length} active
                 </span>
@@ -512,7 +512,7 @@ export default function ResponderPortal({
                   onClick={fetchPortalData}
                   disabled={loadingData}
                   className={`rounded-md border px-2.5 py-1 text-xs transition ${
-                    isLight ? "border-slate-300 bg-white text-slate-700 hover:bg-slate-50" : "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
+                    isLight ? "border-slate-300 bg-white text-slate-700 hover:bg-slate-50 shadow-sm" : "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
                   }`}
                 >
                   {loadingData ? "Refreshing…" : "↻ Refresh"}
@@ -521,19 +521,23 @@ export default function ResponderPortal({
             </div>
 
             {/* Tab Views */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className={`flex-1 overflow-y-auto p-6 ${isLight ? "bg-slate-50/70" : "bg-transparent"}`}>
               {/* TAB 1: High-Confidence Cleanup Alerts (>70%) */}
               {activeTab === "actionable" && (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between rounded-lg border border-orange-500/20 bg-orange-950/20 p-3 text-xs text-orange-200">
+                  <div className={`flex items-center justify-between rounded-lg border p-3 text-xs ${
+                    isLight
+                      ? "border-amber-200 bg-amber-50/90 text-amber-900 shadow-sm"
+                      : "border-orange-500/20 bg-orange-950/20 text-orange-200"
+                  }`}>
                     <div>
-                      <strong>Actionable Cleanup Stream:</strong> Detections with AI confidence &ge; 70% or verified by verified responders.
+                      <strong>Actionable Cleanup Stream:</strong> Detections with AI confidence &ge; 70% or verified by authorized responders.
                       Ready for immediate vessel dispatch or interception.
                     </div>
                   </div>
 
                   {inbox?.actionable_alerts.length === 0 ? (
-                    <div className="p-12 text-center text-sm text-slate-500">
+                    <div className={`p-12 text-center text-sm ${isLight ? "text-slate-400" : "text-slate-500"}`}>
                       No high-confidence actionable alerts currently waiting.
                     </div>
                   ) : (
@@ -541,43 +545,55 @@ export default function ResponderPortal({
                       {inbox?.actionable_alerts.map((item) => (
                         <div
                           key={item.id}
-                          className="flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-900/60 p-4 transition hover:border-slate-700"
+                          className={`flex flex-col gap-3 rounded-xl border p-4 transition ${
+                            isLight
+                              ? "border-slate-200 bg-white shadow-sm hover:border-slate-300 hover:shadow-md"
+                              : "border-slate-800 bg-slate-900/60 hover:border-slate-700"
+                          }`}
                         >
                           <div className="flex items-start justify-between">
                             <div>
                               <div className="flex items-center gap-2">
-                                <span className="font-bold text-slate-100">{item.external_id}</span>
-                                <span className="rounded border border-orange-500/40 bg-orange-500/10 px-2 py-0.5 text-[10px] font-bold text-orange-300">
+                                <span className={`font-bold ${isLight ? "text-slate-900" : "text-slate-100"}`}>{item.external_id}</span>
+                                <span className={`rounded border px-2 py-0.5 text-[10px] font-bold ${
+                                  isLight
+                                    ? "border-orange-300 bg-orange-50 text-orange-800"
+                                    : "border-orange-500/40 bg-orange-500/10 text-orange-300"
+                                }`}>
                                   {(item.confidence * 100).toFixed(1)}% CONFIDENCE
                                 </span>
-                                <span className="rounded border border-slate-700 bg-slate-800 px-2 py-0.5 text-[10px] uppercase text-slate-300">
+                                <span className={`rounded border px-2 py-0.5 text-[10px] uppercase font-medium ${
+                                  isLight
+                                    ? "border-slate-200 bg-slate-100 text-slate-700"
+                                    : "border-slate-700 bg-slate-800 text-slate-300"
+                                }`}>
                                   STATUS: {item.status.replaceAll("_", " ")}
                                 </span>
                                 {item.risk_level && (
                                   <span
-                                    className={`rounded px-2 py-0.5 text-[10px] font-bold ${
+                                    className={`rounded px-2 py-0.5 text-[10px] font-bold border ${
                                       item.risk_level === "CRITICAL"
-                                        ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                                        ? isLight ? "border-red-200 bg-red-50 text-red-700" : "border-red-500/30 bg-red-500/20 text-red-400"
                                         : item.risk_level === "HIGH"
-                                        ? "bg-orange-500/20 text-orange-400 border border-orange-500/30"
-                                        : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                                        ? isLight ? "border-orange-200 bg-orange-50 text-orange-700" : "border-orange-500/30 bg-orange-500/20 text-orange-400"
+                                        : isLight ? "border-amber-200 bg-amber-50 text-amber-700" : "border-amber-500/30 bg-amber-500/20 text-amber-400"
                                     }`}
                                   >
                                     RISK: {item.risk_level}
                                   </span>
                                 )}
                               </div>
-                              <div className="mt-1 text-xs text-slate-400">
+                              <div className={`mt-1 text-xs ${isLight ? "text-slate-600" : "text-slate-400"}`}>
                                 {item.object_class.replaceAll("_", " ")} · Located at{" "}
                                 {item.latitude.toFixed(4)}°N, {item.longitude.toFixed(4)}°E · Source: {item.source}
                               </div>
                               {item.assigned_team && (
-                                <div className="mt-1 text-xs text-sky-400">
+                                <div className={`mt-1 text-xs ${isLight ? "text-sky-700 font-medium" : "text-sky-400"}`}>
                                   Assigned to: <strong>{item.assigned_team}</strong> ({item.assigned_to || "Field Team"})
                                 </div>
                               )}
                               {item.recommended_action && (
-                                <div className="mt-1.5 text-xs text-slate-300 italic">
+                                <div className={`mt-1.5 text-xs italic ${isLight ? "text-slate-700" : "text-slate-300"}`}>
                                   Recommendation: {item.recommended_action}
                                 </div>
                               )}
@@ -588,20 +604,26 @@ export default function ResponderPortal({
                                 onSelectDetectionOnMap(item.external_id);
                                 onClose();
                               }}
-                              className="rounded-lg border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-xs font-medium text-sky-300 hover:bg-sky-500/20"
+                              className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
+                                isLight
+                                  ? "border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100"
+                                  : "border-sky-500/30 bg-sky-500/10 text-sky-300 hover:bg-sky-500/20"
+                              }`}
                             >
                               Show on Map ↗
                             </button>
                           </div>
 
                           {/* Action Bar */}
-                          <div className="flex flex-wrap items-center gap-2 border-t border-slate-800/80 pt-3">
-                            <span className="text-[11px] font-semibold text-slate-400">Responder Actions:</span>
+                          <div className={`flex flex-wrap items-center gap-2 border-t pt-3 ${
+                            isLight ? "border-slate-100" : "border-slate-800/80"
+                          }`}>
+                            <span className={`text-[11px] font-semibold ${isLight ? "text-slate-500" : "text-slate-400"}`}>Responder Actions:</span>
 
                             {item.status !== "assigned" && (
                               <button
                                 onClick={() => openActionModal(item, "assign")}
-                                className="rounded bg-sky-600/80 px-2.5 py-1 text-xs font-medium text-white hover:bg-sky-500"
+                                className="rounded bg-sky-600 px-2.5 py-1 text-xs font-medium text-white transition hover:bg-sky-500 shadow-sm"
                               >
                                 Assign Team / Vessel
                               </button>
@@ -610,7 +632,7 @@ export default function ResponderPortal({
                             {item.status !== "being_handled" && (
                               <button
                                 onClick={() => openActionModal(item, "being_handled")}
-                                className="rounded bg-purple-600/80 px-2.5 py-1 text-xs font-medium text-white hover:bg-purple-500"
+                                className="rounded bg-purple-600 px-2.5 py-1 text-xs font-medium text-white transition hover:bg-purple-500 shadow-sm"
                               >
                                 Mark Being Handled
                               </button>
@@ -619,7 +641,7 @@ export default function ResponderPortal({
                             {item.status !== "resolved" && (
                               <button
                                 onClick={() => openActionModal(item, "resolve")}
-                                className="rounded bg-emerald-600/80 px-2.5 py-1 text-xs font-medium text-white hover:bg-emerald-500"
+                                className="rounded bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white transition hover:bg-emerald-500 shadow-sm"
                               >
                                 Mark Resolved / Recovered
                               </button>
@@ -627,9 +649,13 @@ export default function ResponderPortal({
 
                             <button
                               onClick={() => viewHistory(item)}
-                              className="ml-auto rounded border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-700"
+                              className={`ml-auto rounded border px-2.5 py-1 text-xs transition ${
+                                isLight
+                                  ? "border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200"
+                                  : "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
+                              }`}
                             >
-                              📜 Audit Trail
+                              Audit Trail
                             </button>
                           </div>
                         </div>
@@ -642,14 +668,18 @@ export default function ResponderPortal({
               {/* TAB 2: Low-Confidence Verification Queue (<70%) */}
               {activeTab === "verification" && (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between rounded-lg border border-amber-500/20 bg-amber-950/20 p-3 text-xs text-amber-200">
+                  <div className={`flex items-center justify-between rounded-lg border p-3 text-xs ${
+                    isLight
+                      ? "border-amber-200 bg-amber-50/90 text-amber-900 shadow-sm"
+                      : "border-amber-500/20 bg-amber-950/20 text-amber-200"
+                  }`}>
                     <div>
                       <strong>Human-in-the-Loop Queue:</strong> Detections with AI confidence &lt; 70% require expert verification by authorized responders before trigger alerts are dispatched to cleanup crews.
                     </div>
                   </div>
 
                   {inbox?.verification_queue.length === 0 ? (
-                    <div className="p-12 text-center text-sm text-slate-500">
+                    <div className={`p-12 text-center text-sm ${isLight ? "text-slate-400" : "text-slate-500"}`}>
                       All low-confidence detections have been verified or rejected. No pending items!
                     </div>
                   ) : (
@@ -657,24 +687,36 @@ export default function ResponderPortal({
                       {inbox?.verification_queue.map((item) => (
                         <div
                           key={item.id}
-                          className="flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-900/60 p-4 transition hover:border-slate-700"
+                          className={`flex flex-col gap-3 rounded-xl border p-4 transition ${
+                            isLight
+                              ? "border-slate-200 bg-white shadow-sm hover:border-slate-300 hover:shadow-md"
+                              : "border-slate-800 bg-slate-900/60 hover:border-slate-700"
+                          }`}
                         >
                           <div className="flex items-start justify-between">
                             <div>
                               <div className="flex items-center gap-2">
-                                <span className="font-bold text-slate-100">{item.external_id}</span>
-                                <span className="rounded border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-300">
+                                <span className={`font-bold ${isLight ? "text-slate-900" : "text-slate-100"}`}>{item.external_id}</span>
+                                <span className={`rounded border px-2 py-0.5 text-[10px] font-bold ${
+                                  isLight
+                                    ? "border-amber-300 bg-amber-50 text-amber-800"
+                                    : "border-amber-500/40 bg-amber-500/10 text-amber-300"
+                                }`}>
                                   {(item.confidence * 100).toFixed(1)}% AI CONFIDENCE
                                 </span>
-                                <span className="rounded border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-[10px] uppercase text-red-300">
+                                <span className={`rounded border px-2 py-0.5 text-[10px] uppercase font-semibold ${
+                                  isLight
+                                    ? "border-rose-200 bg-rose-50 text-rose-700"
+                                    : "border-red-500/30 bg-red-500/10 text-red-300"
+                                }`}>
                                   REQUIRES HUMAN REVIEW
                                 </span>
                               </div>
-                              <div className="mt-1 text-xs text-slate-400">
+                              <div className={`mt-1 text-xs ${isLight ? "text-slate-600" : "text-slate-400"}`}>
                                 Object: {item.object_class.replaceAll("_", " ")} · Location:{" "}
                                 {item.latitude.toFixed(4)}°N, {item.longitude.toFixed(4)}°E · Source: {item.source}
                               </div>
-                              <div className="mt-1 text-xs text-slate-500">
+                              <div className={`mt-1 text-xs ${isLight ? "text-slate-500" : "text-slate-500"}`}>
                                 Detected: {new Date(item.timestamp).toUTCString()}
                               </div>
                             </div>
@@ -684,32 +726,42 @@ export default function ResponderPortal({
                                 onSelectDetectionOnMap(item.external_id);
                                 onClose();
                               }}
-                              className="rounded-lg border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-xs font-medium text-sky-300 hover:bg-sky-500/20"
+                              className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
+                                isLight
+                                  ? "border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100"
+                                  : "border-sky-500/30 bg-sky-500/10 text-sky-300 hover:bg-sky-500/20"
+                              }`}
                             >
                               Inspect Geometry ↗
                             </button>
                           </div>
 
                           {/* Verification Actions */}
-                          <div className="flex items-center gap-3 border-t border-slate-800/80 pt-3">
-                            <span className="text-[11px] font-semibold text-slate-400">Responder Decision:</span>
+                          <div className={`flex items-center gap-3 border-t pt-3 ${
+                            isLight ? "border-slate-100" : "border-slate-800/80"
+                          }`}>
+                            <span className={`text-[11px] font-semibold ${isLight ? "text-slate-500" : "text-slate-400"}`}>Responder Decision:</span>
                             <button
                               onClick={() => openActionModal(item, "verify")}
-                              className="rounded bg-emerald-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-emerald-500"
+                              className="rounded bg-emerald-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-emerald-500 shadow-sm"
                             >
                               ✓ Verify as Debris
                             </button>
                             <button
                               onClick={() => openActionModal(item, "reject")}
-                              className="rounded bg-red-600/80 px-3 py-1 text-xs font-semibold text-white transition hover:bg-red-500"
+                              className="rounded bg-red-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-red-500 shadow-sm"
                             >
                               ✕ Reject (False Positive)
                             </button>
                             <button
                               onClick={() => viewHistory(item)}
-                              className="ml-auto rounded border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-700"
+                              className={`ml-auto rounded border px-2.5 py-1 text-xs transition ${
+                                isLight
+                                  ? "border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200"
+                                  : "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
+                              }`}
                             >
-                              📜 Audit Trail
+                              Audit Trail
                             </button>
                           </div>
                         </div>
@@ -722,14 +774,18 @@ export default function ResponderPortal({
               {/* TAB 3: Marine-life & Ecological Alerts */}
               {activeTab === "ecological" && (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between rounded-lg border border-rose-500/20 bg-rose-950/20 p-3 text-xs text-rose-200">
+                  <div className={`flex items-center justify-between rounded-lg border p-3 text-xs ${
+                    isLight
+                      ? "border-rose-200 bg-rose-50/90 text-rose-900 shadow-sm"
+                      : "border-rose-500/20 bg-rose-950/20 text-rose-200"
+                  }`}>
                     <div>
                       <strong>Automated Ecological Proximity Engine:</strong> Alerts triggered when detected marine debris or its predicted drift trajectory approaches coral reefs, Marine Protected Areas, turtle nesting beaches, or cetacean corridors.
                     </div>
                   </div>
 
                   {ecologicalAlerts.length === 0 ? (
-                    <div className="p-12 text-center text-sm text-slate-500">
+                    <div className={`p-12 text-center text-sm ${isLight ? "text-slate-400" : "text-slate-500"}`}>
                       No ecological alerts registered.
                     </div>
                   ) : (
@@ -739,7 +795,11 @@ export default function ResponderPortal({
                           key={alert.id}
                           className={`flex flex-col gap-3 rounded-xl border p-4 transition ${
                             alert.status === "active"
-                              ? "border-rose-500/40 bg-rose-950/20"
+                              ? isLight
+                                ? "border-rose-300 bg-rose-50/50 shadow-sm hover:shadow-md"
+                                : "border-rose-500/40 bg-rose-950/20"
+                              : isLight
+                              ? "border-slate-200 bg-white opacity-90 shadow-sm"
                               : "border-slate-800 bg-slate-900/60 opacity-80"
                           }`}
                         >
@@ -752,33 +812,37 @@ export default function ResponderPortal({
                                       ? "bg-red-600 text-white"
                                       : alert.severity === "HIGH"
                                       ? "bg-orange-500 text-white"
-                                      : "bg-amber-500 text-black"
+                                      : "bg-amber-500 text-slate-900 font-bold"
                                   }`}
                                 >
                                   {alert.severity}
                                 </span>
-                                <span className="font-bold text-slate-100">{alert.headline}</span>
-                                <span className="rounded border border-slate-700 bg-slate-800 px-2 py-0.5 text-[10px] uppercase text-slate-300">
+                                <span className={`font-bold ${isLight ? "text-slate-900" : "text-slate-100"}`}>{alert.headline}</span>
+                                <span className={`rounded border px-2 py-0.5 text-[10px] uppercase font-medium ${
+                                  isLight
+                                    ? "border-slate-200 bg-slate-100 text-slate-700"
+                                    : "border-slate-700 bg-slate-800 text-slate-300"
+                                }`}>
                                   {alert.status}
                                 </span>
                               </div>
 
-                              <p className="text-xs text-slate-300">{alert.details}</p>
+                              <p className={`text-xs ${isLight ? "text-slate-700" : "text-slate-300"}`}>{alert.details}</p>
 
-                              <div className="flex flex-wrap items-center gap-3 pt-1 text-[11px] text-slate-400">
-                                <span>Area: <strong className="text-slate-200">{alert.region_name}</strong></span>
-                                <span>Distance: <strong className="text-slate-200">{alert.distance_km.toFixed(1)} km</strong></span>
-                                <span>Impact ETA: <strong className="text-slate-200">{alert.estimated_impact_hours.toFixed(1)} hrs</strong></span>
+                              <div className={`flex flex-wrap items-center gap-3 pt-1 text-[11px] ${isLight ? "text-slate-500" : "text-slate-400"}`}>
+                                <span>Area: <strong className={isLight ? "text-slate-800" : "text-slate-200"}>{alert.region_name}</strong></span>
+                                <span>Distance: <strong className={isLight ? "text-slate-800" : "text-slate-200"}>{alert.distance_km.toFixed(1)} km</strong></span>
+                                <span>Impact ETA: <strong className={isLight ? "text-slate-800" : "text-slate-200"}>{alert.estimated_impact_hours.toFixed(1)} hrs</strong></span>
                                 {alert.species_at_risk.length > 0 && (
-                                  <span>Species at risk: <strong className="text-rose-300">{alert.species_at_risk.join(", ")}</strong></span>
+                                  <span>Species at risk: <strong className={isLight ? "text-rose-700 font-semibold" : "text-rose-300"}>{alert.species_at_risk.join(", ")}</strong></span>
                                 )}
                               </div>
 
-                              <div className="pt-1 text-[11px] text-emerald-400">
+                              <div className={`pt-1 text-[11px] font-medium ${isLight ? "text-emerald-700" : "text-emerald-400"}`}>
                                 <strong>Recommended Action:</strong> {alert.recommended_action}
                               </div>
 
-                              <div className="text-[10px] text-slate-500 italic">
+                              <div className={`text-[10px] italic ${isLight ? "text-slate-400" : "text-slate-500"}`}>
                                 Scientific Citation: {alert.source_citation}
                               </div>
                             </div>
@@ -788,18 +852,24 @@ export default function ResponderPortal({
                                 onSelectDetectionOnMap(alert.external_id);
                                 onClose();
                               }}
-                              className="rounded-lg border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-xs font-medium text-sky-300 hover:bg-sky-500/20"
+                              className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
+                                isLight
+                                  ? "border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100"
+                                  : "border-sky-500/30 bg-sky-500/10 text-sky-300 hover:bg-sky-500/20"
+                              }`}
                             >
                               View Threat on Map ↗
                             </button>
                           </div>
 
                           {/* Alert Actions */}
-                          <div className="flex items-center gap-2 border-t border-slate-800/80 pt-2 text-xs">
+                          <div className={`flex items-center gap-2 border-t pt-2 text-xs ${
+                            isLight ? "border-slate-100" : "border-slate-800/80"
+                          }`}>
                             {alert.status === "active" && (
                               <button
                                 onClick={() => handleAcknowledgeAlert(alert.id)}
-                                className="rounded bg-sky-600/70 px-2.5 py-1 text-white hover:bg-sky-500"
+                                className="rounded bg-sky-600 px-2.5 py-1 text-white font-medium hover:bg-sky-500 shadow-sm"
                               >
                                 Acknowledge Threat
                               </button>
@@ -807,7 +877,7 @@ export default function ResponderPortal({
                             {alert.status !== "resolved" && (
                               <button
                                 onClick={() => handleResolveAlert(alert.id)}
-                                className="rounded bg-emerald-600/70 px-2.5 py-1 text-white hover:bg-emerald-500"
+                                className="rounded bg-emerald-600 px-2.5 py-1 text-white font-medium hover:bg-emerald-500 shadow-sm"
                               >
                                 Mark Threat Mitigated / Resolved
                               </button>
