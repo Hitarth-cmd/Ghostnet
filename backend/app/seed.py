@@ -15,47 +15,12 @@ logger = logging.getLogger("ghostnet.seed")
 
 
 def seed_demo_data(db: Session) -> int:
-    """Idempotently load the deterministic demo detection catalogue,
-    seed demo responder/NGO accounts, run multi-agent analysis on detections,
-    and register data source provenance records."""
-    provider = MockDetectionProvider()
-    created = 0
+    """Idempotently ingest Sentinel-2 data from Earth Engine (balmy-ocean-509105-v8),
+    run marine debris AI model inference, seed responder accounts, and analyze incidents."""
+    from app.detection.earthengine_scanner import ingest_and_scan_all_regions
 
-    # 1. Seed detections (or update coordinates if refined)
-    from app.models.other import Trajectory, RiskAssessment, Report
-    for record in provider.list_detections():
-        existing = db.query(Detection).filter(Detection.external_id == record.external_id).one_or_none()
-        if existing is not None:
-            if abs(existing.latitude - record.latitude) > 1e-4 or abs(existing.longitude - record.longitude) > 1e-4:
-                existing.latitude = record.latitude
-                existing.longitude = record.longitude
-                existing.geometry = record.geometry
-                # Clear outdated trajectories, alerts, and reports so pipeline recalculates them in water
-                from app.models.alert import EcologicalAlert
-                db.query(Trajectory).filter(Trajectory.detection_id == existing.id).delete()
-                db.query(RiskAssessment).filter(RiskAssessment.detection_id == existing.id).delete()
-                db.query(Report).filter(Report.detection_id == existing.id).delete()
-                db.query(EcologicalAlert).filter(EcologicalAlert.detection_id == existing.id).delete()
-            continue
-        db.add(
-            Detection(
-                external_id=record.external_id,
-                latitude=record.latitude,
-                longitude=record.longitude,
-                geometry=record.geometry,
-                confidence=record.confidence,
-                object_class=record.object_class.value,
-                status=record.status.value,
-                incident_status="unverified",
-                timestamp=record.timestamp,
-                source=record.source,
-                scene_id=record.scene_id,
-                area_m2=record.area_m2,
-            )
-        )
-        created += 1
-
-    db.commit()
+    # 1. Ingest Sentinel-2 from Earth Engine and run ViT-UNet++ AI segmentation
+    created = ingest_and_scan_all_regions(db, force=True)
 
     # 2. Seed demo users (NGO and Admin)
     demo_users = [

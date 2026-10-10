@@ -10,11 +10,23 @@ import ResponderPortal from "@/components/ResponderPortal";
 import EcologicalAlertBanner from "@/components/EcologicalAlertBanner";
 import DataSourcesModal from "@/components/DataSourcesModal";
 import ChatWidget from "@/components/ChatWidget";
+import ModelInferenceModal from "@/components/ModelInferenceModal";
 
 // Dynamic import for MapLibre
 const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
 
 const EMPTY_FC: FeatureCollection = { type: "FeatureCollection", features: [] };
+
+const HOTSPOT_REGIONS = [
+  { id: "goa", name: "Goa Waters", lat: 15.20, lon: 72.85 },
+  { id: "mumbai", name: "Mumbai Port", lat: 18.80, lon: 72.15 },
+  { id: "mannar", name: "Gulf of Mannar", lat: 8.85, lon: 79.45 },
+  { id: "lakshadweep", name: "Lakshadweep", lat: 10.55, lon: 72.45 },
+  { id: "andaman", name: "Andaman Sea", lat: 11.60, lon: 93.15 },
+  { id: "kochi", name: "Kochi Waters", lat: 9.80, lon: 75.60 },
+  { id: "chennai", name: "Chennai Coast", lat: 13.15, lon: 80.40 },
+  { id: "kutch", name: "Gulf of Kutch", lat: 22.50, lon: 69.20 },
+];
 
 export default function DashboardPage() {
   const [detections, setDetections] = useState<Detection[]>([]);
@@ -35,6 +47,11 @@ export default function DashboardPage() {
   const [selectedDetection, setSelectedDetection] = useState<Detection | null>(null);
   const [mapCenterCoords, setMapCenterCoords] = useState<[number, number] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+
+  // Live Earth Engine scanning states
+  const [isScanningGEE, setIsScanningGEE] = useState(false);
+  const [geeScanStep, setGeeScanStep] = useState<string | null>(null);
+  const [selectedHotspot, setSelectedHotspot] = useState(HOTSPOT_REGIONS[0]);
 
   // Theme state: "light" (default) or "dark"
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -59,6 +76,7 @@ export default function DashboardPage() {
   // Modals
   const [isResponderPortalOpen, setIsResponderPortalOpen] = useState(false);
   const [isDataSourcesOpen, setIsDataSourcesOpen] = useState(false);
+  const [isModelInferenceOpen, setIsModelInferenceOpen] = useState(false);
 
   // Chat overlay from Debris Route Assistant
   const [chatOverlayFC, setChatOverlayFC] = useState<GeoJSON.FeatureCollection | null>(null);
@@ -165,10 +183,80 @@ export default function DashboardPage() {
     setIsResponderPortalOpen(true);
   }
 
+  async function handleTriggerGEEScan(region = selectedHotspot) {
+    setIsScanningGEE(true);
+    setGeeScanStep(`Ingesting Sentinel-2 imagery for ${region.name} from Earth Engine (balmy-ocean-509105-v8)...`);
+    try {
+      await new Promise((r) => setTimeout(r, 600));
+      setGeeScanStep(`Running ViT-UNet++ model inference (segmentation_best.pth) on multispectral bands...`);
+
+      const scanRes = await api.scanEarthEngine({
+        latitude: region.lat,
+        longitude: region.lon,
+        pixel_size_meters: 10.0,
+        plot_to_map: true,
+      });
+
+      const areaM2 = scanRes.summary?.debris_area_m2 || 0;
+      setGeeScanStep(`Marine debris identified (${areaM2.toLocaleString()} m²)! Plotting to map...`);
+      await refreshAll();
+
+      if (scanRes.created_detections && scanRes.created_detections.length > 0) {
+        const newExtId = scanRes.created_detections[0].external_id;
+        setSelectedId(newExtId);
+        setMapCenterCoords([region.lon, region.lat]);
+      } else {
+        setMapCenterCoords([region.lon, region.lat]);
+      }
+
+      await new Promise((r) => setTimeout(r, 1200));
+      setGeeScanStep(null);
+    } catch (e: any) {
+      setGeeScanStep(null);
+      setLoadError(e.message || "Failed to scan Sentinel-2 satellite imagery from Earth Engine");
+    } finally {
+      setIsScanningGEE(false);
+    }
+  }
+
+  async function handleSyncAllCatalog() {
+    setIsScanningGEE(true);
+    setGeeScanStep("Synchronizing Sentinel-2 observations across Indian coastal waters from Earth Engine (balmy-ocean-509105-v8)...");
+    try {
+      const res = await api.syncEarthEngineCatalog();
+      setGeeScanStep(`Successfully updated ${res.active_detections} Sentinel-2 marine debris targets!`);
+      await refreshAll();
+      await new Promise((r) => setTimeout(r, 1500));
+      setGeeScanStep(null);
+    } catch (e: any) {
+      setGeeScanStep(null);
+      setLoadError(e.message || "Failed to sync Earth Engine satellite catalog");
+    } finally {
+      setIsScanningGEE(false);
+    }
+  }
+
   return (
     <main className={`relative h-screen w-screen overflow-hidden font-sans transition-colors ${
       theme === "light" ? "theme-light bg-slate-100 text-slate-800" : "bg-slate-950 text-slate-100"
     }`}>
+      {/* Live Earth Engine Scanning Notification */}
+      {geeScanStep && (
+        <div className="pointer-events-auto fixed top-6 left-1/2 z-50 -translate-x-1/2 rounded-2xl border border-sky-400/60 bg-slate-950/95 px-6 py-3.5 shadow-2xl backdrop-blur-md flex items-center gap-3.5 animate-pulse">
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-sky-400 border-t-transparent" />
+          <div>
+            <div className="text-[11px] font-bold text-sky-300 flex items-center gap-2">
+              <span>Google Earth Engine Pipeline</span>
+              <span className="rounded bg-sky-500/20 px-1.5 py-0.5 text-[9px] font-mono text-sky-200">
+                balmy-ocean-509105-v8
+              </span>
+            </div>
+            <div className="text-xs text-slate-100 font-semibold mt-0.5">
+              {geeScanStep}
+            </div>
+          </div>
+        </div>
+      )}
       {/* 1. Full-screen Interactive Marine Map */}
       <div className="absolute inset-0">
         <MapView
@@ -226,6 +314,19 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsModelInferenceOpen(true)}
+              className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-bold transition shadow-sm ${
+                theme === "light"
+                  ? "border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100"
+                  : "border-sky-500/40 bg-sky-950/70 text-sky-200 hover:bg-sky-900/80"
+              }`}
+              title="Scan Satellite Imagery with trained ViT-UNet++ AI Model (segmentation_best.pth)"
+            >
+              <span>🛰️</span>
+              <span>AI Model Scanner</span>
+            </button>
+
             {/* Theme Toggle Button */}
             <button
               id="theme-toggle-btn"
@@ -249,9 +350,81 @@ export default function DashboardPage() {
               }`}
               title="Open Responder & Admin Login Console"
             >
+              <span>👑</span>
               <span>Admin / Login</span>
             </button>
           </div>
+        </div>
+
+        {/* Live Earth Engine Satellite Ingestion Toolbar */}
+        <div className={`pointer-events-auto flex items-center gap-2 rounded-xl border px-3 py-2 shadow-2xl backdrop-blur-md transition-colors ${
+          theme === "light"
+            ? "border-slate-200/90 bg-white/95 text-slate-800 shadow-slate-900/10"
+            : "border-sky-500/40 bg-slate-950/95 text-slate-100"
+        }`}>
+          <div className="flex items-center gap-1.5">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+            </span>
+            <span className={`text-[10px] font-extrabold uppercase tracking-wider ${
+              theme === "light" ? "text-sky-700" : "text-sky-300"
+            }`}>
+              GEE Ingest
+            </span>
+          </div>
+
+          <select
+            value={selectedHotspot.id}
+            onChange={(e) => {
+              const f = HOTSPOT_REGIONS.find((r) => r.id === e.target.value);
+              if (f) setSelectedHotspot(f);
+            }}
+            className={`rounded-lg border px-2 py-1 text-[11px] font-semibold outline-none cursor-pointer ${
+              theme === "light"
+                ? "border-slate-300 bg-slate-50 text-slate-800"
+                : "border-slate-700 bg-slate-900 text-slate-200"
+            }`}
+            disabled={isScanningGEE}
+          >
+            {HOTSPOT_REGIONS.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name} ({r.lat.toFixed(1)}°N, {r.lon.toFixed(1)}°E)
+              </option>
+            ))}
+          </select>
+
+          <button
+            onClick={() => handleTriggerGEEScan()}
+            disabled={isScanningGEE}
+            className="flex items-center gap-1.5 rounded-lg bg-sky-600 px-2.5 py-1 text-[11px] font-bold text-white shadow transition hover:bg-sky-500 disabled:opacity-50"
+            title="Fetch live Sentinel-2 satellite image from Earth Engine for this location and run marine debris inference"
+          >
+            {isScanningGEE ? (
+              <>
+                <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                <span>Scanning...</span>
+              </>
+            ) : (
+              <>
+                <span>🛰️</span>
+                <span>Fetch Satellite &amp; Run Model</span>
+              </>
+            )}
+          </button>
+
+          <button
+            onClick={handleSyncAllCatalog}
+            disabled={isScanningGEE}
+            className={`rounded-lg border px-2 py-1 text-[10px] font-semibold disabled:opacity-50 transition ${
+              theme === "light"
+                ? "border-sky-300 bg-sky-50 text-sky-800 hover:bg-sky-100"
+                : "border-sky-500/30 bg-sky-950/50 text-sky-200 hover:bg-sky-900/60"
+            }`}
+            title="Ingest Sentinel-2 data across all 8 Indian coastal regions via Earth Engine balmy-ocean-509105-v8"
+          >
+            Sync All
+          </button>
         </div>
 
         {/* Operational Filter Pills */}
@@ -360,7 +533,14 @@ export default function DashboardPage() {
         theme={theme}
       />
 
-      {/* 8. Vessel Debris Route Chatbot */}
+      {/* 8. AI Model Scanner Modal */}
+      <ModelInferenceModal
+        isOpen={isModelInferenceOpen}
+        onClose={() => setIsModelInferenceOpen(false)}
+        onDetectionPlotted={refreshAll}
+      />
+
+      {/* 9. Vessel Debris Route Chatbot */}
       <ChatWidget
         onRouteDrawn={(fc) => setChatOverlayFC(fc)}
         theme={theme}

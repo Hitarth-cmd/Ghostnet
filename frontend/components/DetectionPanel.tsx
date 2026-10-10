@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { AnalysisResult, Detection } from "@/types";
+import type { AnalysisResult, Detection, SatellitePreviewResponse } from "@/types";
 import { api } from "@/lib/api";
 
 const RISK_COLORS: Record<string, string> = {
@@ -40,11 +40,26 @@ export default function DetectionPanel({
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [preview, setPreview] = useState<SatellitePreviewResponse | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewTab, setPreviewTab] = useState<"overlay" | "mask" | "rgb">("overlay");
 
-  // When detection changes, reset or load initial report
+  // When detection changes, reset or load initial report and satellite preview
   useEffect(() => {
     setAnalysis(null);
     setError(null);
+    if (!detection?.external_id) {
+      setPreview(null);
+      return;
+    }
+    setPreviewLoading(true);
+    api.getSatellitePreview(detection.external_id)
+      .then((data) => setPreview(data))
+      .catch((err) => {
+        console.warn("Satellite preview fetch error:", err);
+        setPreview(null);
+      })
+      .finally(() => setPreviewLoading(false));
   }, [detection?.external_id]);
 
   if (!detection) {
@@ -165,6 +180,131 @@ export default function DetectionPanel({
               {new Date(detection.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} UTC
             </div>
           </div>
+        </div>
+
+        {/* Earth Engine Satellite Imagery & AI Segmentation Visualizer */}
+        <div className="rounded-xl border border-sky-500/30 bg-slate-900/80 p-3.5 shadow-lg">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+            <div className="flex items-center gap-2">
+              <span className="text-base">🛰️</span>
+              <div>
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-100">
+                  <span>Sentinel-2 Satellite Image</span>
+                  <span className="rounded bg-sky-500/20 px-1.5 py-0.2 text-[9px] font-bold text-sky-300">
+                    GEE LIVE
+                  </span>
+                </div>
+                <div className="text-[10px] text-slate-400 font-mono truncate max-w-[170px]" title={detection.scene_id}>
+                  {detection.scene_id || "Sentinel-2 L2A"}
+                </div>
+              </div>
+            </div>
+
+            {/* View Tab Selector */}
+            <div className="flex rounded-lg border border-slate-700 bg-slate-950 p-0.5 text-[10px]">
+              <button
+                onClick={() => setPreviewTab("overlay")}
+                className={`rounded px-2 py-0.5 font-bold transition ${
+                  previewTab === "overlay" ? "bg-sky-600 text-white" : "text-slate-400 hover:text-slate-200"
+                }`}
+                title="AI Debris Boundary Overlay"
+              >
+                Overlay
+              </button>
+              <button
+                onClick={() => setPreviewTab("mask")}
+                className={`rounded px-2 py-0.5 font-bold transition ${
+                  previewTab === "mask" ? "bg-sky-600 text-white" : "text-slate-400 hover:text-slate-200"
+                }`}
+                title="11-Class Semantic Segmentation Mask"
+              >
+                11-Mask
+              </button>
+              <button
+                onClick={() => setPreviewTab("rgb")}
+                className={`rounded px-2 py-0.5 font-bold transition ${
+                  previewTab === "rgb" ? "bg-sky-600 text-white" : "text-slate-400 hover:text-slate-200"
+                }`}
+                title="Sentinel-2 Optical RGB Surface Reflectance"
+              >
+                RGB
+              </button>
+            </div>
+          </div>
+
+          {/* Image Display */}
+          <div className="relative mt-3 aspect-video w-full overflow-hidden rounded-lg border border-slate-800 bg-slate-950 flex items-center justify-center">
+            {previewLoading ? (
+              <div className="flex flex-col items-center gap-2 text-xs text-slate-400">
+                <span className="h-5 w-5 animate-spin rounded-full border-2 border-sky-400 border-t-transparent" />
+                <span>Ingesting Sentinel-2 bands from Earth Engine...</span>
+              </div>
+            ) : preview?.visualizations ? (
+              <>
+                <img
+                  src={
+                    previewTab === "overlay"
+                      ? preview.visualizations.debris_overlay
+                      : previewTab === "mask"
+                      ? preview.visualizations.segmentation_mask
+                      : preview.visualizations.rgb_quicklook
+                  }
+                  alt={`Sentinel-2 ${previewTab}`}
+                  className="h-full w-full object-cover"
+                />
+                <div className="absolute bottom-1.5 left-1.5 rounded bg-slate-950/85 px-2 py-0.5 text-[9px] font-mono text-sky-300 backdrop-blur border border-slate-800">
+                  {previewTab === "overlay" && "🎯 AI Marine Debris (Red Cluster)"}
+                  {previewTab === "mask" && "🔬 ViT-UNet++ 11-Class Semantic Mask"}
+                  {previewTab === "rgb" && "🌍 Sentinel-2 L2A RGB Surface Reflectance"}
+                </div>
+              </>
+            ) : (
+              <div className="p-4 text-center text-xs text-slate-500">
+                Satellite preview currently unavailable
+              </div>
+            )}
+          </div>
+
+          {/* Earth Engine Project & Model Provenance */}
+          <div className="mt-2.5 flex items-center justify-between text-[10px] text-slate-400 border-t border-slate-800/80 pt-2">
+            <span className="font-mono text-sky-400 font-semibold">
+              EE: balmy-ocean-509105-v8
+            </span>
+            <span className="text-emerald-400 font-semibold">
+              ViT-UNet++ (val mIoU 71.96%)
+            </span>
+          </div>
+
+          {/* Top Detected Classes Breakdown */}
+          {preview?.class_breakdown && (
+            <div className="mt-2.5 space-y-1.5">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Semantic Spectrum Distribution
+              </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                {preview.class_breakdown
+                  .filter((c) => c.percentage > 0.05 || c.class_id === 0)
+                  .slice(0, 4)
+                  .map((c) => (
+                    <div
+                      key={c.class_id}
+                      className="flex items-center justify-between rounded bg-slate-950/80 px-2 py-1 text-[10px] border border-slate-800"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className="h-2 w-2 rounded-full"
+                          style={{ backgroundColor: c.color }}
+                        />
+                        <span className="text-slate-300 truncate max-w-[85px]">{c.name}</span>
+                      </div>
+                      <span className="font-mono font-bold text-slate-200">
+                        {c.percentage.toFixed(1)}%
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Incident Assignment Banner */}

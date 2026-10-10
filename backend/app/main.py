@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import detections, inference, jobs, map as map_api, system
-from app.api import users, alerts
+from app.api import users, alerts, earthengine
 from app.api import chat as chat_api
 from app.config import get_settings
 from app.database import SessionLocal, init_db
@@ -67,3 +67,4 @@ app.include_router(inference.router)
 app.include_router(users.router)
 app.include_router(alerts.router)
 app.include_router(chat_api.router)
+app.include_router(earthengine.router)

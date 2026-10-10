@@ -4,6 +4,7 @@ An end-to-end operational decision-support and responder coordination platform f
 
 Built with a modular multi-agent pipeline around the detection model (treated as a stable black box with a fixed input/output interface), backed by peer-reviewed geospatial datasets and verified responder workflows.
 
+
 ---
 
 ## 🚀 Key Modules & Capabilities
