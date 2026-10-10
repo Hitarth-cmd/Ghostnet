@@ -16,6 +16,7 @@ interface ResponderPortalProps {
   onClose: () => void;
   onSelectDetectionOnMap: (externalId: string) => void;
   onIncidentUpdated: () => void;
+  theme?: "light" | "dark";
 }
 
 export default function ResponderPortal({
@@ -23,7 +24,9 @@ export default function ResponderPortal({
   onClose,
   onSelectDetectionOnMap,
   onIncidentUpdated,
+  theme = "light",
 }: ResponderPortalProps) {
+  const isLight = theme === "light";
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const [loginEmail, setLoginEmail] = useState("responder@oceanguard.org");
@@ -33,7 +36,7 @@ export default function ResponderPortal({
     password: "",
     full_name: "",
     organization: "",
-    role: "responder",
+    role: "ngo",
     phone: "",
   });
   const [authError, setAuthError] = useState<string | null>(null);
@@ -191,21 +194,29 @@ export default function ResponderPortal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
-      <div className="relative flex h-[88vh] w-full max-w-5xl flex-col rounded-2xl border border-sky-500/20 bg-slate-950/95 shadow-2xl">
+    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md ${isLight ? "theme-light" : ""}`}>
+      <div className={`relative flex h-[88vh] w-full max-w-5xl flex-col rounded-2xl border shadow-2xl transition-colors ${
+        isLight
+          ? "border-slate-200/90 bg-white/98 text-slate-800 shadow-slate-900/15"
+          : "border-sky-500/20 bg-slate-950/95 text-slate-100"
+      }`}>
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-800 px-6 py-4">
+        <div className={`flex items-center justify-between border-b px-6 py-4 ${
+          isLight ? "border-slate-200 bg-slate-50/80" : "border-slate-800"
+        }`}>
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-500/20 text-sky-400">
+            <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${
+              isLight ? "bg-sky-100 text-sky-700" : "bg-sky-500/20 text-sky-400"
+            }`}>
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-100">
+              <h2 className={`text-base font-bold ${isLight ? "text-slate-900" : "text-slate-100"}`}>
                 OceanGuard Responder & NGO Operations Centre
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className={`text-xs ${isLight ? "text-slate-500" : "text-slate-400"}`}>
                 Authorized debris verification, intervention dispatch & marine-life alert management
               </p>
             </div>
@@ -213,15 +224,17 @@ export default function ResponderPortal({
 
           <div className="flex items-center gap-3">
             {currentUser && (
-              <div className="flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-900/80 px-3 py-1.5 text-xs">
+              <div className={`flex items-center gap-3 rounded-lg border px-3 py-1.5 text-xs ${
+                isLight ? "border-slate-200 bg-slate-100" : "border-slate-800 bg-slate-900/80"
+              }`}>
                 <div className="h-2 w-2 rounded-full bg-emerald-400" />
                 <div>
-                  <span className="font-semibold text-slate-200">{currentUser.full_name}</span>
+                  <span className={`font-semibold ${isLight ? "text-slate-800" : "text-slate-200"}`}>{currentUser.full_name}</span>
                   <span className="ml-2 text-slate-500">({currentUser.organization || currentUser.role})</span>
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="ml-2 text-[11px] text-rose-400 hover:text-rose-300 underline"
+                  className="ml-2 text-[11px] text-rose-500 hover:text-rose-600 underline font-medium"
                 >
                   Log Out
                 </button>
@@ -229,7 +242,9 @@ export default function ResponderPortal({
             )}
             <button
               onClick={onClose}
-              className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+              className={`rounded-lg p-1.5 transition ${
+                isLight ? "text-slate-400 hover:bg-slate-100 hover:text-slate-700" : "text-slate-400 hover:bg-slate-800 hover:text-white"
+              }`}
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -242,14 +257,16 @@ export default function ResponderPortal({
         {!currentUser ? (
           /* Authentication Screen */
           <div className="flex flex-1 items-center justify-center p-8">
-            <div className="w-full max-w-md rounded-xl border border-sky-500/20 bg-slate-900/90 p-6 shadow-xl">
-              <div className="mb-6 flex border-b border-slate-800 pb-3">
+            <div className={`w-full max-w-md rounded-xl border p-6 shadow-xl ${
+              isLight ? "border-slate-200 bg-white" : "border-sky-500/20 bg-slate-900/90"
+            }`}>
+              <div className={`mb-6 flex border-b pb-3 ${isLight ? "border-slate-200" : "border-slate-800"}`}>
                 <button
                   onClick={() => setAuthMode("login")}
                   className={`flex-1 pb-2 text-sm font-semibold transition ${
                     authMode === "login"
-                      ? "border-b-2 border-sky-400 text-sky-400"
-                      : "text-slate-400 hover:text-slate-200"
+                      ? isLight ? "border-b-2 border-sky-600 text-sky-600" : "border-b-2 border-sky-400 text-sky-400"
+                      : isLight ? "text-slate-500 hover:text-slate-800" : "text-slate-400 hover:text-slate-200"
                   }`}
                 >
                   Responder Login
@@ -258,8 +275,8 @@ export default function ResponderPortal({
                   onClick={() => setAuthMode("register")}
                   className={`flex-1 pb-2 text-sm font-semibold transition ${
                     authMode === "register"
-                      ? "border-b-2 border-sky-400 text-sky-400"
-                      : "text-slate-400 hover:text-slate-200"
+                      ? isLight ? "border-b-2 border-sky-600 text-sky-600" : "border-b-2 border-sky-400 text-sky-400"
+                      : isLight ? "text-slate-500 hover:text-slate-800" : "text-slate-400 hover:text-slate-200"
                   }`}
                 >
                   Register Organization
@@ -267,7 +284,9 @@ export default function ResponderPortal({
               </div>
 
               {authError && (
-                <div className="mb-4 rounded-lg border border-red-500/30 bg-red-950/60 p-3 text-xs text-red-300">
+                <div className={`mb-4 rounded-lg border p-3 text-xs ${
+                  isLight ? "border-red-200 bg-red-50 text-red-700" : "border-red-500/30 bg-red-950/60 text-red-300"
+                }`}>
                   {authError}
                 </div>
               )}
@@ -275,29 +294,37 @@ export default function ResponderPortal({
               {authMode === "login" ? (
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div>
-                    <label className="block text-xs font-medium text-slate-300">Email Address</label>
+                    <label className={`block text-xs font-medium ${isLight ? "text-slate-700" : "text-slate-300"}`}>Email Address</label>
                     <input
                       type="email"
                       required
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
-                      className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                      className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-sky-500 focus:outline-none ${
+                        isLight ? "border-slate-300 bg-white text-slate-900 placeholder-slate-400" : "border-slate-700 bg-slate-800/80 text-slate-100 placeholder-slate-500"
+                      }`}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-300">Password</label>
+                    <label className={`block text-xs font-medium ${isLight ? "text-slate-700" : "text-slate-300"}`}>Password</label>
                     <input
                       type="password"
                       required
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
-                      className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                      className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-sky-500 focus:outline-none ${
+                        isLight ? "border-slate-300 bg-white text-slate-900 placeholder-slate-400" : "border-slate-700 bg-slate-800/80 text-slate-100 placeholder-slate-500"
+                      }`}
                     />
                   </div>
 
-                  <div className="rounded-xl bg-slate-950/70 p-3 text-xs border border-sky-500/20">
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-sky-400 mb-2">
-                      ⚡ Quick Login Shortcuts (Click to Auto-fill):
+                  <div className={`rounded-xl p-3 text-xs border ${
+                    isLight ? "border-slate-200 bg-slate-50" : "border-sky-500/20 bg-slate-950/70"
+                  }`}>
+                    <div className={`text-[11px] font-bold uppercase tracking-wider mb-2 ${
+                      isLight ? "text-sky-700" : "text-sky-400"
+                    }`}>
+                      Quick Login Shortcuts (Click to Auto-fill):
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <button
@@ -306,10 +333,14 @@ export default function ResponderPortal({
                           setLoginEmail("admin@oceanguard.org");
                           setLoginPassword("admin123456");
                         }}
-                        className="rounded-lg border border-purple-500/40 bg-purple-950/40 p-2 text-left transition hover:bg-purple-900/60"
+                        className={`rounded-lg border p-2 text-left transition ${
+                          isLight
+                            ? "border-purple-200 bg-purple-50 text-purple-900 hover:bg-purple-100"
+                            : "border-purple-500/40 bg-purple-950/40 text-purple-200 hover:bg-purple-900/60"
+                        }`}
                       >
-                        <div className="text-[11px] font-bold text-purple-200">👑 Admin Account</div>
-                        <div className="text-[10px] text-purple-400/80">admin@oceanguard.org</div>
+                        <div className="text-[11px] font-bold">Admin Account</div>
+                        <div className={`text-[10px] ${isLight ? "text-purple-700/80" : "text-purple-400/80"}`}>admin@oceanguard.org</div>
                       </button>
 
                       <button
@@ -318,34 +349,14 @@ export default function ResponderPortal({
                           setLoginEmail("responder@oceanguard.org");
                           setLoginPassword("responder123");
                         }}
-                        className="rounded-lg border border-sky-500/40 bg-sky-950/40 p-2 text-left transition hover:bg-sky-900/60"
+                        className={`rounded-lg border p-2 text-left transition ${
+                          isLight
+                            ? "border-sky-200 bg-sky-50 text-sky-900 hover:bg-sky-100"
+                            : "border-sky-500/40 bg-sky-950/40 text-sky-200 hover:bg-sky-900/60"
+                        }`}
                       >
-                        <div className="text-[11px] font-bold text-sky-200">🛡️ NGO Lead (Anya)</div>
-                        <div className="text-[10px] text-sky-400/80">responder@oceanguard.org</div>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setLoginEmail("cleanup@marinerescue.org");
-                          setLoginPassword("cleanup123");
-                        }}
-                        className="rounded-lg border border-emerald-500/40 bg-emerald-950/40 p-2 text-left transition hover:bg-emerald-900/60"
-                      >
-                        <div className="text-[11px] font-bold text-emerald-200">🚢 Cleanup Vessel</div>
-                        <div className="text-[10px] text-emerald-400/80">cleanup@marinerescue.org</div>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setLoginEmail("researcher@incois.gov.in");
-                          setLoginPassword("researcher123");
-                        }}
-                        className="rounded-lg border border-amber-500/40 bg-amber-950/40 p-2 text-left transition hover:bg-amber-900/60"
-                      >
-                        <div className="text-[11px] font-bold text-amber-200">🔬 INCOIS Scientist</div>
-                        <div className="text-[10px] text-amber-400/80">researcher@incois.gov.in</div>
+                        <div className="text-[11px] font-bold">NGO Lead (Anya)</div>
+                        <div className={`text-[10px] ${isLight ? "text-sky-700/80" : "text-sky-400/80"}`}>responder@oceanguard.org</div>
                       </button>
                     </div>
                   </div>
@@ -361,60 +372,68 @@ export default function ResponderPortal({
               ) : (
                 <form onSubmit={handleRegister} className="space-y-3">
                   <div>
-                    <label className="block text-xs font-medium text-slate-300">Full Name</label>
+                    <label className={`block text-xs font-medium ${isLight ? "text-slate-700" : "text-slate-300"}`}>Full Name</label>
                     <input
                       type="text"
                       required
                       value={registerForm.full_name}
                       onChange={(e) => setRegisterForm({ ...registerForm, full_name: e.target.value })}
                       placeholder="Dr. Maya Sen"
-                      className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-sm text-slate-100 focus:border-sky-500 focus:outline-none"
+                      className={`mt-1 w-full rounded-lg border px-3 py-1.5 text-sm focus:border-sky-500 focus:outline-none ${
+                        isLight ? "border-slate-300 bg-white text-slate-900 placeholder-slate-400" : "border-slate-700 bg-slate-800/80 text-slate-100"
+                      }`}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-300">Email Address</label>
+                    <label className={`block text-xs font-medium ${isLight ? "text-slate-700" : "text-slate-300"}`}>Email Address</label>
                     <input
                       type="email"
                       required
                       value={registerForm.email}
                       onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
                       placeholder="maya@oceansos.org"
-                      className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-sm text-slate-100 focus:border-sky-500 focus:outline-none"
+                      className={`mt-1 w-full rounded-lg border px-3 py-1.5 text-sm focus:border-sky-500 focus:outline-none ${
+                        isLight ? "border-slate-300 bg-white text-slate-900 placeholder-slate-400" : "border-slate-700 bg-slate-800/80 text-slate-100"
+                      }`}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-300">Organization Name</label>
+                    <label className={`block text-xs font-medium ${isLight ? "text-slate-700" : "text-slate-300"}`}>Organization Name</label>
                     <input
                       type="text"
                       value={registerForm.organization}
                       onChange={(e) => setRegisterForm({ ...registerForm, organization: e.target.value })}
                       placeholder="Ocean SOS / Coast Guard / University"
-                      className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-sm text-slate-100 focus:border-sky-500 focus:outline-none"
+                      className={`mt-1 w-full rounded-lg border px-3 py-1.5 text-sm focus:border-sky-500 focus:outline-none ${
+                        isLight ? "border-slate-300 bg-white text-slate-900 placeholder-slate-400" : "border-slate-700 bg-slate-800/80 text-slate-100"
+                      }`}
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-xs font-medium text-slate-300">Role</label>
+                      <label className={`block text-xs font-medium ${isLight ? "text-slate-700" : "text-slate-300"}`}>Role</label>
                       <select
                         value={registerForm.role}
                         onChange={(e) => setRegisterForm({ ...registerForm, role: e.target.value })}
-                        className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-sm text-slate-100 focus:border-sky-500 focus:outline-none"
+                        className={`mt-1 w-full rounded-lg border px-3 py-1.5 text-sm focus:border-sky-500 focus:outline-none ${
+                          isLight ? "border-slate-300 bg-white text-slate-900" : "border-slate-700 bg-slate-800/80 text-slate-100"
+                        }`}
                       >
-                        <option value="responder">Cleanup Responder</option>
                         <option value="ngo">Environmental NGO</option>
-                        <option value="researcher">Marine Researcher</option>
-                        <option value="coast_guard">Coast Guard</option>
+                        <option value="admin">Administrator</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-300">Password</label>
+                      <label className={`block text-xs font-medium ${isLight ? "text-slate-700" : "text-slate-300"}`}>Password</label>
                       <input
                         type="password"
                         required
                         minLength={8}
                         value={registerForm.password}
                         onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
-                        className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-sm text-slate-100 focus:border-sky-500 focus:outline-none"
+                        className={`mt-1 w-full rounded-lg border px-3 py-1.5 text-sm focus:border-sky-500 focus:outline-none ${
+                          isLight ? "border-slate-300 bg-white text-slate-900" : "border-slate-700 bg-slate-800/80 text-slate-100"
+                        }`}
                       />
                     </div>
                   </div>
@@ -433,18 +452,22 @@ export default function ResponderPortal({
           /* Logged In Responder Workspace */
           <div className="flex flex-1 flex-col overflow-hidden">
             {/* Nav Tabs */}
-            <div className="flex items-center gap-2 border-b border-slate-800 bg-slate-900/50 px-6 py-2.5">
+            <div className={`flex items-center gap-2 border-b px-6 py-2.5 ${
+              isLight ? "border-slate-200 bg-slate-50" : "border-slate-800 bg-slate-900/50"
+            }`}>
               <button
                 onClick={() => setActiveTab("actionable")}
                 className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
                   activeTab === "actionable"
-                    ? "bg-sky-500/20 text-sky-400 border border-sky-500/30"
-                    : "text-slate-400 hover:text-slate-200"
+                    ? isLight ? "bg-sky-100 text-sky-800 border border-sky-300" : "bg-sky-500/20 text-sky-400 border border-sky-500/30"
+                    : isLight ? "text-slate-600 hover:text-slate-900" : "text-slate-400 hover:text-slate-200"
                 }`}
               >
                 <span>⚡ High-Confidence Cleanup Alerts</span>
                 {inbox && (
-                  <span className="rounded-full bg-orange-500/20 px-2 py-0.5 text-[10px] text-orange-300">
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] ${
+                    isLight ? "bg-orange-100 text-orange-800" : "bg-orange-500/20 text-orange-300"
+                  }`}>
                     {inbox.total_actionable}
                   </span>
                 )}
@@ -454,13 +477,15 @@ export default function ResponderPortal({
                 onClick={() => setActiveTab("verification")}
                 className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
                   activeTab === "verification"
-                    ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-                    : "text-slate-400 hover:text-slate-200"
+                    ? isLight ? "bg-amber-100 text-amber-800 border border-amber-300" : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                    : isLight ? "text-slate-600 hover:text-slate-900" : "text-slate-400 hover:text-slate-200"
                 }`}
               >
                 <span>🔍 Human Verification Queue (&lt;70%)</span>
                 {inbox && (
-                  <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] text-amber-300">
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] ${
+                    isLight ? "bg-amber-100 text-amber-800" : "bg-amber-500/20 text-amber-300"
+                  }`}>
                     {inbox.total_requiring_action}
                   </span>
                 )}
@@ -470,12 +495,14 @@ export default function ResponderPortal({
                 onClick={() => setActiveTab("ecological")}
                 className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
                   activeTab === "ecological"
-                    ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
-                    : "text-slate-400 hover:text-slate-200"
+                    ? isLight ? "bg-rose-100 text-rose-800 border border-rose-300" : "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                    : isLight ? "text-slate-600 hover:text-slate-900" : "text-slate-400 hover:text-slate-200"
                 }`}
               >
                 <span>⚠️ Marine-Life & Ecological Alerts</span>
-                <span className="rounded-full bg-rose-500/20 px-2 py-0.5 text-[10px] text-rose-300">
+                <span className={`rounded-full px-2 py-0.5 text-[10px] ${
+                  isLight ? "bg-rose-100 text-rose-800" : "bg-rose-500/20 text-rose-300"
+                }`}>
                   {ecologicalAlerts.filter((a) => a.status === "active").length} active
                 </span>
               </button>
@@ -484,7 +511,9 @@ export default function ResponderPortal({
                 <button
                   onClick={fetchPortalData}
                   disabled={loadingData}
-                  className="rounded-md border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-700"
+                  className={`rounded-md border px-2.5 py-1 text-xs transition ${
+                    isLight ? "border-slate-300 bg-white text-slate-700 hover:bg-slate-50" : "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  }`}
                 >
                   {loadingData ? "Refreshing…" : "↻ Refresh"}
                 </button>
@@ -796,38 +825,46 @@ export default function ResponderPortal({
 
         {/* MODAL 1: Incident Action Modal */}
         {selectedIncident && (
-          <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/70 p-4">
-            <div className="w-full max-w-lg rounded-xl border border-sky-500/30 bg-slate-900 p-6 shadow-2xl">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-sky-400">
+          <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4">
+            <div className={`w-full max-w-lg rounded-xl border p-6 shadow-2xl transition-colors ${
+              isLight ? "border-slate-200 bg-white text-slate-800" : "border-sky-500/30 bg-slate-900 text-slate-100"
+            }`}>
+              <h3 className={`text-sm font-bold uppercase tracking-wider ${
+                isLight ? "text-sky-700" : "text-sky-400"
+              }`}>
                 Update Incident Status: {selectedIncident.external_id}
               </h3>
-              <p className="mt-1 text-xs text-slate-400">
-                Action: <strong className="text-slate-100 uppercase">{actionType.replaceAll("_", " ")}</strong>
+              <p className={`mt-1 text-xs ${isLight ? "text-slate-500" : "text-slate-400"}`}>
+                Action: <strong className={`uppercase ${isLight ? "text-slate-900" : "text-slate-100"}`}>{actionType.replaceAll("_", " ")}</strong>
               </p>
 
               <form onSubmit={submitIncidentAction} className="mt-4 space-y-4">
                 {actionType === "assign" && (
                   <div>
-                    <label className="block text-xs font-medium text-slate-300">Assign Responder Team / Vessel</label>
+                    <label className={`block text-xs font-medium ${isLight ? "text-slate-700" : "text-slate-300"}`}>Assign Responder Team / Vessel</label>
                     <input
                       type="text"
                       required
                       placeholder="e.g. Sagar Rakshak Patrol Vessel / Mumbai Coast Guard Unit"
                       value={assignedTeamInput}
                       onChange={(e) => setAssignedTeamInput(e.target.value)}
-                      className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 focus:border-sky-500 focus:outline-none"
+                      className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-sky-500 focus:outline-none ${
+                        isLight ? "border-slate-300 bg-white text-slate-900 placeholder-slate-400" : "border-slate-700 bg-slate-800 text-slate-100"
+                      }`}
                     />
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-300">Operational Notes / Reason</label>
+                  <label className={`block text-xs font-medium ${isLight ? "text-slate-700" : "text-slate-300"}`}>Operational Notes / Reason</label>
                   <textarea
                     rows={3}
                     placeholder="Provide details about the verification or intervention dispatch..."
                     value={actionNotesInput}
                     onChange={(e) => setActionNotesInput(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 focus:border-sky-500 focus:outline-none"
+                    className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-sky-500 focus:outline-none ${
+                      isLight ? "border-slate-300 bg-white text-slate-900 placeholder-slate-400" : "border-slate-700 bg-slate-800 text-slate-100"
+                    }`}
                   />
                 </div>
 
@@ -835,7 +872,9 @@ export default function ResponderPortal({
                   <button
                     type="button"
                     onClick={() => setSelectedIncident(null)}
-                    className="rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-xs font-medium text-slate-300 hover:bg-slate-700"
+                    className={`rounded-lg border px-4 py-2 text-xs font-medium transition ${
+                      isLight ? "border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200" : "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
+                    }`}
                   >
                     Cancel
                   </button>
@@ -854,15 +893,19 @@ export default function ResponderPortal({
 
         {/* MODAL 2: Audit History Modal */}
         {showHistoryModal && historyData && (
-          <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/70 p-4">
-            <div className="w-full max-w-lg rounded-xl border border-sky-500/30 bg-slate-900 p-6 shadow-2xl">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 className="text-sm font-bold text-slate-100">
+          <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4">
+            <div className={`w-full max-w-lg rounded-xl border p-6 shadow-2xl transition-colors ${
+              isLight ? "border-slate-200 bg-white text-slate-800" : "border-sky-500/30 bg-slate-900 text-slate-100"
+            }`}>
+              <div className={`flex items-center justify-between border-b pb-3 ${
+                isLight ? "border-slate-200" : "border-slate-800"
+              }`}>
+                <h3 className={`text-sm font-bold ${isLight ? "text-slate-900" : "text-slate-100"}`}>
                   Incident Audit Trail: {historyData.detection_id}
                 </h3>
                 <button
                   onClick={() => setShowHistoryModal(false)}
-                  className="text-slate-400 hover:text-white"
+                  className={`transition ${isLight ? "text-slate-400 hover:text-slate-700" : "text-slate-400 hover:text-white"}`}
                 >
                   ✕
                 </button>
@@ -870,31 +913,35 @@ export default function ResponderPortal({
 
               <div className="my-4 max-h-72 space-y-3 overflow-y-auto pr-1">
                 {historyData.actions.length === 0 ? (
-                  <div className="py-6 text-center text-xs text-slate-500">
+                  <div className={`py-6 text-center text-xs ${isLight ? "text-slate-400" : "text-slate-500"}`}>
                     No actions logged for this detection yet.
                   </div>
                 ) : (
                   historyData.actions.map((act) => (
-                    <div key={act.id} className="rounded-lg border border-slate-800 bg-slate-800/40 p-3 text-xs">
+                    <div key={act.id} className={`rounded-lg border p-3 text-xs ${
+                      isLight ? "border-slate-200 bg-slate-50" : "border-slate-800 bg-slate-800/40"
+                    }`}>
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-sky-400 uppercase">{act.action}</span>
-                        <span className="text-[10px] text-slate-500">
+                        <span className={`font-semibold uppercase ${isLight ? "text-sky-700" : "text-sky-400"}`}>{act.action}</span>
+                        <span className={`text-[10px] ${isLight ? "text-slate-400" : "text-slate-500"}`}>
                           {new Date(act.timestamp).toLocaleString()}
                         </span>
                       </div>
-                      <div className="mt-1 text-slate-300">
+                      <div className={`mt-1 ${isLight ? "text-slate-700" : "text-slate-300"}`}>
                         Responder: <strong>{act.user_name}</strong> {act.organization ? `(${act.organization})` : ""}
                       </div>
-                      <div className="text-[11px] text-slate-400">
-                        Status Change: {act.previous_status || "initial"} &rarr; <span className="text-emerald-400">{act.new_status}</span>
+                      <div className={`text-[11px] ${isLight ? "text-slate-500" : "text-slate-400"}`}>
+                        Status Change: {act.previous_status || "initial"} &rarr; <span className={isLight ? "text-emerald-700 font-semibold" : "text-emerald-400"}>{act.new_status}</span>
                       </div>
                       {act.assigned_team && (
-                        <div className="text-[11px] text-sky-300">
+                        <div className={`text-[11px] font-medium ${isLight ? "text-sky-700" : "text-sky-300"}`}>
                           Assigned Team: {act.assigned_team}
                         </div>
                       )}
                       {act.notes && (
-                        <div className="mt-1 rounded bg-slate-900/60 p-2 text-[11px] text-slate-300 italic">
+                        <div className={`mt-1 rounded p-2 text-[11px] italic ${
+                          isLight ? "bg-white border border-slate-200 text-slate-700" : "bg-slate-900/60 text-slate-300"
+                        }`}>
                           &ldquo;{act.notes}&rdquo;
                         </div>
                       )}
@@ -906,7 +953,9 @@ export default function ResponderPortal({
               <div className="flex justify-end">
                 <button
                   onClick={() => setShowHistoryModal(false)}
-                  className="rounded-lg border border-slate-700 bg-slate-800 px-4 py-1.5 text-xs text-slate-300 hover:bg-slate-700"
+                  className={`rounded-lg border px-4 py-1.5 text-xs font-medium transition ${
+                    isLight ? "border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200" : "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  }`}
                 >
                   Close
                 </button>

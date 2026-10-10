@@ -20,9 +20,48 @@ export interface MapLayers {
 }
 
 export const BASEMAP_STYLES = {
-  dark: {
-    name: "Tactical Dark",
-    url: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+  light: {
+    name: "Voyager Marine",
+    url: "/map-styles/voyager-marine.json",
+  },
+  ocean: {
+    name: "Ocean Bathymetry",
+    url: {
+      version: 8,
+      sources: {
+        "esri-ocean": {
+          type: "raster",
+          tiles: [
+            "https://services.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}",
+          ],
+          tileSize: 256,
+          attribution: "Esri, GEBCO, NOAA, National Geographic",
+        },
+        "esri-ocean-ref": {
+          type: "raster",
+          tiles: [
+            "https://services.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Reference/MapServer/tile/{z}/{y}/{x}",
+          ],
+          tileSize: 256,
+        },
+      },
+      layers: [
+        {
+          id: "esri-ocean-layer",
+          type: "raster",
+          source: "esri-ocean",
+          minzoom: 0,
+          maxzoom: 19,
+        },
+        {
+          id: "esri-ocean-ref-layer",
+          type: "raster",
+          source: "esri-ocean-ref",
+          minzoom: 0,
+          maxzoom: 19,
+        },
+      ],
+    },
   },
   satellite: {
     name: "Ocean Satellite",
@@ -49,9 +88,9 @@ export const BASEMAP_STYLES = {
       ],
     },
   },
-  light: {
-    name: "Positron Light",
-    url: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+  dark: {
+    name: "Tactical Dark",
+    url: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
   },
 };
 
@@ -122,6 +161,7 @@ interface MapViewProps {
   selectedDetectionId?: string | null;
   centerCoordinates?: [number, number] | null;
   chatOverlayFC?: GeoJSON.FeatureCollection | null;
+  theme?: "light" | "dark";
 }
 
 export default function MapView({
@@ -132,6 +172,7 @@ export default function MapView({
   selectedDetectionId,
   centerCoordinates,
   chatOverlayFC,
+  theme = "light",
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -139,7 +180,10 @@ export default function MapView({
   const loadedRef = useRef(false);
   const animFrameRef = useRef<number | null>(null);
 
-  const [currentStyle, setCurrentStyle] = useState<keyof typeof BASEMAP_STYLES>("dark");
+  const isLight = theme === "light";
+  const [currentStyle, setCurrentStyle] = useState<keyof typeof BASEMAP_STYLES>(
+    theme === "light" ? "light" : "dark"
+  );
   const [showDeckCurrents, setShowDeckCurrents] = useState(true);
   const [showDeck3DDriftArcs, setShowDeck3DDriftArcs] = useState(true);
   const [driftForecastTimeHour, setDriftForecastTimeHour] = useState<number>(72);
@@ -234,6 +278,15 @@ export default function MapView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Switch basemap when theme changes
+  useEffect(() => {
+    const targetStyle = theme === "light" ? "light" : "dark";
+    if (mapRef.current && currentStyle !== targetStyle) {
+      switchBasemap(targetStyle);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [theme]);
+
   // Update deck.gl layers when data, animation, or visibility changes
   useEffect(() => {
     updateDeckLayers();
@@ -247,6 +300,7 @@ export default function MapView({
     animTime,
     selectedDetectionId,
     chatOverlayFC,
+    theme,
   ]);
 
   function updateDeckLayers() {
@@ -275,8 +329,8 @@ export default function MapView({
           data: currentLines,
           getSourcePosition: (d: any) => d.from,
           getTargetPosition: (d: any) => d.to,
-          getColor: [6, 182, 212, 45], // subtle translucent cyan
-          getWidth: 1.0,
+          getColor: isLight ? [224, 242, 254, 180] : [6, 182, 212, 45],
+          getWidth: 1.4,
           widthUnits: "pixels",
           pickable: false,
         })
@@ -289,11 +343,14 @@ export default function MapView({
           data: currentLines,
           getPosition: (d: any) => d.head,
           radiusUnits: "pixels",
-          getRadius: 2.2,
-          radiusMinPixels: 1.4,
-          radiusMaxPixels: 3.4,
-          getFillColor: [34, 211, 238, 220], // sleek neon cyan glow
-          stroked: false,
+          getRadius: 2.6,
+          radiusMinPixels: 1.6,
+          radiusMaxPixels: 3.6,
+          getFillColor: isLight ? [14, 165, 233, 255] : [34, 211, 238, 220],
+          stroked: true,
+          getLineColor: [255, 255, 255, 240],
+          getLineWidth: 1,
+          lineWidthUnits: "pixels",
           pickable: false,
         })
       );
@@ -486,7 +543,75 @@ export default function MapView({
 
   // Setup all base MapLibre vector layers
   function setupMapLibreLayers(map: MapLibreMap, currentLayers: MapLayers) {
-    // 1. Protected Areas (WDPA)
+    // Enrich basemap with vibrant, rich, aesthetic ocean & natural terrestrial colors
+    if (currentStyle === "light") {
+      // 1. Ocean & Sea Waters - rich, luminous, deep tropical marine azure
+      if (map.getLayer("water")) {
+        try {
+          map.setPaintProperty("water", "fill-color", "#3d95df");
+        } catch {}
+      }
+
+      // 2. Coastal Shelf / Water Shadow
+      if (map.getLayer("water_shadow")) {
+        try {
+          map.setPaintProperty("water_shadow", "fill-color", "#2477c4");
+          map.setPaintProperty("water_shadow", "fill-opacity", 0.7);
+        } catch {}
+      }
+
+      // 3. Rivers & Waterways
+      if (map.getLayer("waterway")) {
+        try {
+          map.setPaintProperty("waterway", "line-color", "#257cc7");
+          map.setPaintProperty("waterway", "line-width", 1.8);
+        } catch {}
+      }
+
+      // 4. Land base - natural warm lush sage/earth terrain
+      if (map.getLayer("background")) {
+        try {
+          map.setPaintProperty("background", "background-color", "#e8f2df");
+        } catch {}
+      }
+
+      // 5. Landcover (Forests, vegetation) - rich emerald green
+      if (map.getLayer("landcover")) {
+        try {
+          map.setPaintProperty("landcover", "fill-color", "#bde4ad");
+          map.setPaintProperty("landcover", "fill-opacity", 0.85);
+        } catch {}
+      }
+
+      // 6. National parks & sanctuaries - vivid vibrant green
+      if (map.getLayer("park_national_park")) {
+        try {
+          map.setPaintProperty("park_national_park", "fill-color", "#93d47d");
+        } catch {}
+      }
+      if (map.getLayer("park_nature_reserve")) {
+        try {
+          map.setPaintProperty("park_nature_reserve", "fill-color", "#a5dc93");
+        } catch {}
+      }
+
+      // 7. General landuse - warm sandy coastal landuse
+      if (map.getLayer("landuse")) {
+        try {
+          map.setPaintProperty("landuse", "fill-color", "#f2edd9");
+        } catch {}
+      }
+
+      // 8. Administrative boundaries
+      if (map.getLayer("boundary_state")) {
+        try {
+          map.setPaintProperty("boundary_state", "line-color", "#6c936c");
+          map.setPaintProperty("boundary_state", "line-width", 1.2);
+        } catch {}
+      }
+    }
+
+    // 1. Protected Areas (WDPA) - Lush Emerald
     if (!map.getSource("protected-areas")) {
       map.addSource("protected-areas", {
         type: "geojson",
@@ -498,7 +623,7 @@ export default function MapView({
         source: "protected-areas",
         paint: {
           "fill-color": "#10b981",
-          "fill-opacity": 0.16,
+          "fill-opacity": 0.32,
         },
       });
       map.addLayer({
@@ -506,14 +631,14 @@ export default function MapView({
         type: "line",
         source: "protected-areas",
         paint: {
-          "line-color": "#10b981",
-          "line-width": 1.6,
+          "line-color": "#047857",
+          "line-width": 2.2,
           "line-dasharray": [3, 2],
         },
       });
     }
 
-    // 2. Coral Reefs (GCRMN / UNEP-WCMC)
+    // 2. Coral Reefs (GCRMN / UNEP-WCMC) - Electric Turquoise
     if (!map.getSource("coral-reefs")) {
       map.addSource("coral-reefs", {
         type: "geojson",
@@ -524,8 +649,8 @@ export default function MapView({
         type: "fill",
         source: "coral-reefs",
         paint: {
-          "fill-color": "#06b6d4",
-          "fill-opacity": 0.24,
+          "fill-color": "#00f0ff",
+          "fill-opacity": 0.42,
         },
       });
       map.addLayer({
@@ -533,13 +658,13 @@ export default function MapView({
         type: "line",
         source: "coral-reefs",
         paint: {
-          "line-color": "#22d3ee",
-          "line-width": 1.8,
+          "line-color": "#0284c7",
+          "line-width": 2.4,
         },
       });
     }
 
-    // 3. Species & Habitats (SWOT / OBIS-SEAMAP)
+    // 3. Species & Habitats (SWOT / OBIS-SEAMAP) - Royal Violet/Magenta
     if (!map.getSource("species-habitats")) {
       map.addSource("species-habitats", {
         type: "geojson",
@@ -551,7 +676,7 @@ export default function MapView({
         source: "species-habitats",
         paint: {
           "fill-color": "#a855f7",
-          "fill-opacity": 0.16,
+          "fill-opacity": 0.32,
         },
       });
       map.addLayer({
@@ -559,14 +684,14 @@ export default function MapView({
         type: "line",
         source: "species-habitats",
         paint: {
-          "line-color": "#c084fc",
-          "line-width": 1.4,
+          "line-color": "#7c3aed",
+          "line-width": 2.0,
           "line-dasharray": [2, 2],
         },
       });
     }
 
-    // 4. Drift Trajectory Uncertainty Cones
+    // 4. Drift Trajectory Uncertainty Cones - Luminous Amber
     if (!map.getSource("trajectories")) {
       map.addSource("trajectories", {
         type: "geojson",
@@ -578,8 +703,8 @@ export default function MapView({
         source: "trajectories",
         filter: ["==", ["get", "layer"], "uncertainty_polygon"],
         paint: {
-          "fill-color": "#facc15",
-          "fill-opacity": 0.12,
+          "fill-color": "#f59e0b",
+          "fill-opacity": 0.26,
         },
       });
       map.addLayer({
@@ -588,14 +713,14 @@ export default function MapView({
         source: "trajectories",
         filter: ["==", ["get", "layer"], "uncertainty_polygon"],
         paint: {
-          "line-color": "#eab308",
-          "line-width": 1.2,
+          "line-color": "#d97706",
+          "line-width": 1.8,
           "line-dasharray": [4, 3],
         },
       });
     }
 
-    // 5. High-Risk Zones
+    // 5. High-Risk Zones - Vibrant Coral Rose / Crimson
     if (!map.getSource("risk-zones")) {
       map.addSource("risk-zones", {
         type: "geojson",
@@ -609,11 +734,11 @@ export default function MapView({
           "fill-color": [
             "match",
             ["get", "risk_level"],
-            "CRITICAL", "#ef4444",
-            "HIGH", "#f97316",
-            "#eab308",
+            "CRITICAL", "#f43f5e",
+            "HIGH", "#fb923c",
+            "#facc15",
           ],
-          "fill-opacity": 0.28,
+          "fill-opacity": 0.35,
         },
       });
       map.addLayer({
@@ -624,11 +749,11 @@ export default function MapView({
           "line-color": [
             "match",
             ["get", "risk_level"],
-            "CRITICAL", "#f87171",
-            "HIGH", "#fb923c",
-            "#facc15",
+            "CRITICAL", "#e11d48",
+            "HIGH", "#ea580c",
+            "#ca8a04",
           ],
-          "line-width": 1.5,
+          "line-width": 2.0,
         },
       });
     }
@@ -728,7 +853,7 @@ export default function MapView({
             "#ef4444",                  // red - unverified
           ],
           "circle-stroke-width": 2.5,
-          "circle-stroke-color": "#091224",
+          "circle-stroke-color": isLight ? "#ffffff" : "#091224",
         },
       });
 
@@ -845,14 +970,25 @@ export default function MapView({
       <div ref={containerRef} className="h-full w-full" />
 
       {/* Floating Tactical Deck.gl & Time-Scrubber Control Toolbar (Bottom-Center) */}
-      <div className="pointer-events-auto absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3 rounded-2xl border border-sky-500/25 bg-slate-950/90 px-4 py-2.5 shadow-2xl backdrop-blur-md">
+      <div 
+        onMouseDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+        className={`pointer-events-auto absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3 rounded-2xl border px-4 py-2.5 shadow-2xl backdrop-blur-md transition-colors ${
+        isLight
+          ? "border-slate-200/90 bg-white/95 text-slate-800 shadow-slate-900/10"
+          : "border-sky-500/25 bg-slate-950/90 text-slate-300 shadow-2xl"
+      }`}>
         {/* Ocean Current Flow Toggle with Live CMEMS Badge */}
         <button
           onClick={() => setShowDeckCurrents((prev) => !prev)}
           className={`flex items-center gap-2 rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
             showDeckCurrents
-              ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm shadow-cyan-500/20"
-              : "text-slate-400 hover:text-slate-200 border border-slate-800"
+              ? isLight
+                ? "bg-sky-50 text-sky-700 border border-sky-300 shadow-sm"
+                : "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm shadow-cyan-500/20"
+              : isLight
+                ? "text-slate-500 hover:text-slate-800 border border-slate-200"
+                : "text-slate-400 hover:text-slate-200 border border-slate-800"
           }`}
           title={
             currentsData.isLive
@@ -863,8 +999,10 @@ export default function MapView({
           <span className={showDeckCurrents ? "animate-pulse" : ""}>🌊</span>
           <span>{currentsData.isLive ? "CMEMS Ocean Flow" : "Ocean Current Flow"}</span>
           {currentsData.isLive && (
-            <span className="flex items-center gap-1 rounded bg-emerald-950/80 border border-emerald-500/40 px-1 py-0.2 text-[9px] font-bold text-emerald-400 tracking-wider">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
+            <span className={`flex items-center gap-1 rounded border px-1 py-0.2 text-[9px] font-bold tracking-wider ${
+              isLight ? "bg-emerald-50 border-emerald-300 text-emerald-700" : "bg-emerald-950/80 border-emerald-500/40 text-emerald-400"
+            }`}>
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
               LIVE
             </span>
           )}
@@ -875,8 +1013,12 @@ export default function MapView({
           onClick={() => setShowDeck3DDriftArcs((prev) => !prev)}
           className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
             showDeck3DDriftArcs
-              ? "bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm shadow-amber-500/20"
-              : "text-slate-400 hover:text-slate-200 border border-slate-800"
+              ? isLight
+                ? "bg-amber-50 text-amber-700 border border-amber-300 shadow-sm"
+                : "bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm shadow-amber-500/20"
+              : isLight
+                ? "text-slate-500 hover:text-slate-800 border border-slate-200"
+                : "text-slate-400 hover:text-slate-200 border border-slate-800"
           }`}
           title="Toggle 3D Elevated Parabolic Drift Arcs"
         >
@@ -884,12 +1026,12 @@ export default function MapView({
           <span>3D Drift Arcs</span>
         </button>
 
-        <div className="h-5 w-px bg-slate-800" />
+        <div className={`h-5 w-px ${isLight ? "bg-slate-200" : "bg-slate-800"}`} />
 
         {/* 72-Hour Forecast Time Scrubber Slider */}
-        <div className="flex items-center gap-2.5 text-xs text-slate-300">
-          <span className="font-semibold text-[11px] text-slate-400 whitespace-nowrap">
-            Drift Forecast: <strong className="text-sky-400">+{driftForecastTimeHour}h</strong>
+        <div className={`flex items-center gap-2.5 text-xs ${isLight ? "text-slate-700" : "text-slate-300"}`}>
+          <span className={`font-semibold text-[11px] whitespace-nowrap ${isLight ? "text-slate-600" : "text-slate-400"}`}>
+            Drift Forecast: <strong className={isLight ? "text-sky-600" : "text-sky-400"}>+{driftForecastTimeHour}h</strong>
           </span>
           <input
             type="range"
@@ -898,15 +1040,15 @@ export default function MapView({
             step="24"
             value={driftForecastTimeHour}
             onChange={(e) => setDriftForecastTimeHour(Number(e.target.value))}
-            className="w-24 accent-sky-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg"
+            className={`w-24 accent-sky-500 cursor-pointer h-1.5 rounded-lg ${isLight ? "bg-slate-200" : "bg-slate-800"}`}
           />
-          <div className="flex gap-1 text-[9px] font-bold text-slate-400">
+          <div className={`flex gap-1 text-[9px] font-bold ${isLight ? "text-slate-600" : "text-slate-400"}`}>
             {[0, 24, 48, 72].map((h) => (
               <button
                 key={h}
                 onClick={() => setDriftForecastTimeHour(h)}
                 className={`rounded px-1.5 py-0.5 ${
-                  driftForecastTimeHour === h ? "bg-sky-500 text-white" : "hover:text-slate-200"
+                  driftForecastTimeHour === h ? "bg-sky-500 text-white" : isLight ? "hover:text-slate-900" : "hover:text-slate-200"
                 }`}
               >
                 {h}h
@@ -917,15 +1059,24 @@ export default function MapView({
       </div>
 
       {/* Basemap Switcher Control in bottom-right */}
-      <div className="absolute bottom-6 right-4 z-10 flex items-center rounded-xl border border-sky-950 bg-slate-900/90 p-1 shadow-xl backdrop-blur">
-        {(["dark", "satellite", "light"] as const).map((key) => (
+      <div 
+        onMouseDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+        className={`absolute bottom-6 right-4 z-10 flex items-center rounded-xl border p-1 shadow-xl backdrop-blur transition-colors ${
+        isLight
+          ? "border-slate-200/90 bg-white/95 text-slate-800 shadow-slate-900/10"
+          : "border-sky-950 bg-slate-900/90 text-slate-400 shadow-xl"
+      }`}>
+        {(["light", "ocean", "satellite", "dark"] as const).map((key) => (
           <button
             key={key}
             onClick={() => switchBasemap(key)}
             className={`rounded-lg px-2.5 py-1 text-[11px] font-medium transition ${
               currentStyle === key
-                ? "bg-sky-500 text-white shadow-sm"
-                : "text-slate-400 hover:text-slate-200"
+                ? "bg-sky-500 text-white shadow-sm font-semibold"
+                : isLight
+                  ? "text-slate-600 hover:text-slate-900"
+                  : "text-slate-400 hover:text-slate-200"
             }`}
           >
             {BASEMAP_STYLES[key].name}

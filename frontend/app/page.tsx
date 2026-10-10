@@ -53,6 +53,26 @@ export default function DashboardPage() {
   const [geeScanStep, setGeeScanStep] = useState<string | null>(null);
   const [selectedHotspot, setSelectedHotspot] = useState(HOTSPOT_REGIONS[0]);
 
+  // Theme state: "light" (default) or "dark"
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("oceanguard_theme") as "light" | "dark" | null;
+      if (saved) {
+        setTheme(saved);
+      }
+    } catch {}
+  }, []);
+
+  const toggleTheme = () => {
+    const next = theme === "light" ? "dark" : "light";
+    setTheme(next);
+    try {
+      localStorage.setItem("oceanguard_theme", next);
+    } catch {}
+  };
+
   // Modals
   const [isResponderPortalOpen, setIsResponderPortalOpen] = useState(false);
   const [isDataSourcesOpen, setIsDataSourcesOpen] = useState(false);
@@ -217,7 +237,9 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="relative h-screen w-screen overflow-hidden bg-slate-950 font-sans">
+    <main className={`relative h-screen w-screen overflow-hidden font-sans transition-colors ${
+      theme === "light" ? "theme-light bg-slate-100 text-slate-800" : "bg-slate-950 text-slate-100"
+    }`}>
       {/* Live Earth Engine Scanning Notification */}
       {geeScanStep && (
         <div className="pointer-events-auto fixed top-6 left-1/2 z-50 -translate-x-1/2 rounded-2xl border border-sky-400/60 bg-slate-950/95 px-6 py-3.5 shadow-2xl backdrop-blur-md flex items-center gap-3.5 animate-pulse">
@@ -235,7 +257,6 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-
       {/* 1. Full-screen Interactive Marine Map */}
       <div className="absolute inset-0">
         <MapView
@@ -258,26 +279,35 @@ export default function DashboardPage() {
           selectedDetectionId={selectedId}
           centerCoordinates={mapCenterCoords}
           chatOverlayFC={chatOverlayFC}
+          theme={theme}
         />
       </div>
 
       {/* 2. Top-Left Branding & Layer Controller */}
       <div className="pointer-events-none absolute left-4 top-4 z-20 flex flex-col gap-3">
-        <div className="pointer-events-auto flex items-center justify-between gap-3 rounded-xl border border-sky-500/25 bg-slate-950/90 px-4 py-2.5 shadow-2xl backdrop-blur-md">
+        <div className={`pointer-events-auto flex items-center justify-between gap-3 rounded-xl border px-4 py-2.5 shadow-xl backdrop-blur-md transition-colors ${
+          theme === "light"
+            ? "border-slate-200/90 bg-white/95 text-slate-800 shadow-slate-900/10"
+            : "border-sky-500/25 bg-slate-950/90 text-slate-100 shadow-2xl"
+        }`}>
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500/20 text-sky-400">
+            <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${
+              theme === "light" ? "bg-sky-100 text-sky-600" : "bg-sky-500/20 text-sky-400"
+            }`}>
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-sm font-extrabold tracking-wide text-slate-100">OceanGuard AI</h1>
-                <span className="rounded bg-sky-500/20 px-1.5 py-0.2 text-[9px] font-bold text-sky-300">
+                <h1 className={`text-sm font-extrabold tracking-wide ${theme === "light" ? "text-slate-900" : "text-slate-100"}`}>OceanGuard AI</h1>
+                <span className={`rounded px-1.5 py-0.2 text-[9px] font-bold ${
+                  theme === "light" ? "bg-sky-100 text-sky-700" : "bg-sky-500/20 text-sky-300"
+                }`}>
                   v2.0 PRO
                 </span>
               </div>
-              <div className="text-[10px] tracking-wide text-slate-400">
+              <div className={`text-[10px] tracking-wide ${theme === "light" ? "text-slate-500" : "text-slate-400"}`}>
                 Marine Debris Intelligence &amp; Ecological Shield
               </div>
             </div>
@@ -286,16 +316,38 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsModelInferenceOpen(true)}
-              className="flex items-center gap-1.5 rounded-lg border border-sky-500/40 bg-sky-950/70 px-2.5 py-1.5 text-[11px] font-bold text-sky-200 transition hover:bg-sky-900/80 shadow-sm"
+              className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-bold transition shadow-sm ${
+                theme === "light"
+                  ? "border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100"
+                  : "border-sky-500/40 bg-sky-950/70 text-sky-200 hover:bg-sky-900/80"
+              }`}
               title="Scan Satellite Imagery with trained ViT-UNet++ AI Model (segmentation_best.pth)"
             >
               <span>🛰️</span>
               <span>AI Model Scanner</span>
             </button>
 
+            {/* Theme Toggle Button */}
+            <button
+              id="theme-toggle-btn"
+              onClick={toggleTheme}
+              className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-bold transition ${
+                theme === "light"
+                  ? "border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 shadow-sm"
+                  : "border-sky-500/40 bg-sky-950/50 text-sky-300 hover:bg-sky-900/70"
+              }`}
+              title={`Switch to ${theme === "light" ? "Dark" : "Light"} mode`}
+            >
+              <span>{theme === "light" ? "☀️ Light" : "🌙 Dark"}</span>
+            </button>
+
             <button
               onClick={() => setIsResponderPortalOpen(true)}
-              className="flex items-center gap-1.5 rounded-lg border border-purple-500/40 bg-purple-950/50 px-2.5 py-1.5 text-[11px] font-bold text-purple-200 transition hover:bg-purple-900/70"
+              className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-bold transition ${
+                theme === "light"
+                  ? "border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 shadow-sm"
+                  : "border-purple-500/40 bg-purple-950/50 text-purple-200 hover:bg-purple-900/70"
+              }`}
               title="Open Responder & Admin Login Console"
             >
               <span>👑</span>
@@ -305,13 +357,19 @@ export default function DashboardPage() {
         </div>
 
         {/* Live Earth Engine Satellite Ingestion Toolbar */}
-        <div className="pointer-events-auto flex items-center gap-2 rounded-xl border border-sky-500/40 bg-slate-950/95 px-3 py-2 shadow-2xl backdrop-blur-md">
+        <div className={`pointer-events-auto flex items-center gap-2 rounded-xl border px-3 py-2 shadow-2xl backdrop-blur-md transition-colors ${
+          theme === "light"
+            ? "border-slate-200/90 bg-white/95 text-slate-800 shadow-slate-900/10"
+            : "border-sky-500/40 bg-slate-950/95 text-slate-100"
+        }`}>
           <div className="flex items-center gap-1.5">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
             </span>
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-300">
+            <span className={`text-[10px] font-extrabold uppercase tracking-wider ${
+              theme === "light" ? "text-sky-700" : "text-sky-300"
+            }`}>
               GEE Ingest
             </span>
           </div>
@@ -322,7 +380,11 @@ export default function DashboardPage() {
               const f = HOTSPOT_REGIONS.find((r) => r.id === e.target.value);
               if (f) setSelectedHotspot(f);
             }}
-            className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] font-semibold text-slate-200 outline-none cursor-pointer"
+            className={`rounded-lg border px-2 py-1 text-[11px] font-semibold outline-none cursor-pointer ${
+              theme === "light"
+                ? "border-slate-300 bg-slate-50 text-slate-800"
+                : "border-slate-700 bg-slate-900 text-slate-200"
+            }`}
             disabled={isScanningGEE}
           >
             {HOTSPOT_REGIONS.map((r) => (
@@ -354,7 +416,11 @@ export default function DashboardPage() {
           <button
             onClick={handleSyncAllCatalog}
             disabled={isScanningGEE}
-            className="rounded-lg border border-sky-500/30 bg-sky-950/50 px-2 py-1 text-[10px] font-semibold text-sky-200 hover:bg-sky-900/60 disabled:opacity-50"
+            className={`rounded-lg border px-2 py-1 text-[10px] font-semibold disabled:opacity-50 transition ${
+              theme === "light"
+                ? "border-sky-300 bg-sky-50 text-sky-800 hover:bg-sky-100"
+                : "border-sky-500/30 bg-sky-950/50 text-sky-200 hover:bg-sky-900/60"
+            }`}
             title="Ingest Sentinel-2 data across all 8 Indian coastal regions via Earth Engine balmy-ocean-509105-v8"
           >
             Sync All
@@ -362,11 +428,15 @@ export default function DashboardPage() {
         </div>
 
         {/* Operational Filter Pills */}
-        <div className="pointer-events-auto flex gap-1 rounded-xl border border-slate-800 bg-slate-950/90 p-1 shadow-lg backdrop-blur-md">
+        <div className={`pointer-events-auto flex gap-1 rounded-xl border p-1 shadow-lg backdrop-blur-md transition-colors ${
+          theme === "light"
+            ? "border-slate-200/90 bg-white/95 text-slate-700 shadow-slate-900/10"
+            : "border-slate-800 bg-slate-950/90 text-slate-300"
+        }`}>
           {[
             { id: "all", label: "All Debris" },
-            { id: "actionable", label: "⚡ Actionable (&ge;70%)" },
-            { id: "review", label: "🔍 Review (&lt;70%)" },
+            { id: "actionable", label: "⚡ Actionable (≥70%)" },
+            { id: "review", label: "🔍 Review (<70%)" },
             { id: "assigned", label: "🚢 Dispatched" },
           ].map((f) => (
             <button
@@ -375,6 +445,8 @@ export default function DashboardPage() {
               className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition ${
                 filterMode === f.id
                   ? "bg-sky-600 text-white shadow-sm"
+                  : theme === "light"
+                  ? "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                   : "text-slate-400 hover:text-slate-200"
               }`}
             >
@@ -387,6 +459,7 @@ export default function DashboardPage() {
           visibleLayers={visibleLayers}
           onToggle={toggleLayer}
           onOpenDataSources={() => setIsDataSourcesOpen(true)}
+          theme={theme}
         />
       </div>
 
@@ -397,6 +470,7 @@ export default function DashboardPage() {
             alerts={ecologicalAlerts}
             onSelectAlert={handleSelectAlertFromTicker}
             onOpenResponderPortal={() => setIsResponderPortalOpen(true)}
+            theme={theme}
           />
         </div>
       </div>
@@ -409,25 +483,34 @@ export default function DashboardPage() {
       )}
 
       {/* 4. Right-side Marine Target Inspector Drawer */}
-      <div className="absolute right-0 top-0 z-20 h-full w-[410px] border-l border-slate-800 bg-slate-950/95 shadow-2xl backdrop-blur-md">
+      <div className={`absolute right-0 top-0 z-20 h-full w-[410px] border-l shadow-2xl backdrop-blur-md transition-colors ${
+        theme === "light"
+          ? "border-slate-200/90 bg-white/98 text-slate-800"
+          : "border-slate-800 bg-slate-950/95 text-slate-100"
+      }`}>
         <DetectionPanel
           detection={selectedDetection}
           onAnalyzed={refreshAll}
           onOpenResponderWithDetection={handleOpenResponderForDetection}
           onClose={() => setSelectedId(null)}
+          theme={theme}
         />
       </div>
 
       {/* 5. Bottom Map Legend */}
-      <div className="pointer-events-none absolute bottom-4 left-4 z-20 rounded-xl border border-slate-800 bg-slate-950/90 px-3.5 py-2 text-[10px] text-slate-400 shadow-xl backdrop-blur-md">
-        <div className="mb-1 font-bold uppercase tracking-wider text-slate-300">Target Legend</div>
+      <div className={`pointer-events-none absolute bottom-4 left-4 z-20 rounded-xl border px-3.5 py-2 text-[10px] shadow-xl backdrop-blur-md transition-colors ${
+        theme === "light"
+          ? "border-slate-200/90 bg-white/95 text-slate-700 shadow-slate-900/10"
+          : "border-slate-800 bg-slate-950/90 text-slate-400"
+      }`}>
+        <div className={`mb-1 font-bold uppercase tracking-wider ${theme === "light" ? "text-slate-800" : "text-slate-300"}`}>Target Legend</div>
         <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-          <LegendDot color="#ef4444" label="Awaiting Review (<70%)" />
-          <LegendDot color="#f97316" label="Actionable Alert (≥70%)" />
-          <LegendDot color="#10b981" label="Human Verified" />
-          <LegendDot color="#f59e0b" label="Vessel Assigned" />
-          <LegendDot color="#a855f7" label="Being Handled" />
-          <LegendDot color="#38bdf8" label="Resolved / Recovered" />
+          <LegendDot color="#ef4444" label="Awaiting Review (<70%)" theme={theme} />
+          <LegendDot color="#f97316" label="Actionable Alert (≥70%)" theme={theme} />
+          <LegendDot color="#10b981" label="Human Verified" theme={theme} />
+          <LegendDot color="#f59e0b" label="Vessel Assigned" theme={theme} />
+          <LegendDot color="#a855f7" label="Being Handled" theme={theme} />
+          <LegendDot color="#38bdf8" label="Resolved / Recovered" theme={theme} />
         </div>
       </div>
 
@@ -440,12 +523,14 @@ export default function DashboardPage() {
           setIsResponderPortalOpen(false);
         }}
         onIncidentUpdated={refreshAll}
+        theme={theme}
       />
 
       {/* 7. Data Sources & Autonomous Research Modal */}
       <DataSourcesModal
         isOpen={isDataSourcesOpen}
         onClose={() => setIsDataSourcesOpen(false)}
+        theme={theme}
       />
 
       {/* 8. AI Model Scanner Modal */}
@@ -458,6 +543,7 @@ export default function DashboardPage() {
       {/* 9. Vessel Debris Route Chatbot */}
       <ChatWidget
         onRouteDrawn={(fc) => setChatOverlayFC(fc)}
+        theme={theme}
       />
 
       {/* Clear chat overlay button — shown only when a route is drawn */}
@@ -465,12 +551,14 @@ export default function DashboardPage() {
         <button
           id="chat-clear-route-btn"
           onClick={() => setChatOverlayFC(null)}
-          className="
+          className={`
             fixed bottom-[6.5rem] right-[430px] z-40 flex items-center gap-1.5
-            rounded-full border border-sky-500/40 bg-slate-900/90 px-3 py-1.5
-            text-[11px] font-semibold text-sky-300 shadow-lg backdrop-blur
-            transition hover:bg-slate-800
-          "
+            rounded-full border px-3 py-1.5 text-[11px] font-semibold shadow-lg backdrop-blur transition
+            ${theme === "light"
+              ? "border-sky-300 bg-white/95 text-sky-700 hover:bg-slate-50"
+              : "border-sky-500/40 bg-slate-900/90 text-sky-300 hover:bg-slate-800"
+            }
+          `}
           title="Clear route overlay from map"
         >
           <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -483,11 +571,11 @@ export default function DashboardPage() {
   );
 }
 
-function LegendDot({ color, label }: { color: string; label: string }) {
+function LegendDot({ color, label, theme = "light" }: { color: string; label: string; theme?: "light" | "dark" }) {
   return (
     <div className="flex items-center gap-1.5">
       <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-      <span className="text-slate-300">{label}</span>
+      <span className={theme === "light" ? "text-slate-700 font-medium" : "text-slate-300"}>{label}</span>
     </div>
   );
 }

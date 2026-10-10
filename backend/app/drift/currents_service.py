@@ -92,12 +92,30 @@ def fetch_cmems_ocean_currents(
             start_datetime=start_str,
         )
 
-        # Most recent timestamp & surface layer
-        latest_slice = ds.isel(time=-1, depth=0)
-        lats = latest_slice["latitude"].values[::subsample_step]
-        lons = latest_slice["longitude"].values[::subsample_step]
-        uo = latest_slice["uo"].values[::subsample_step, ::subsample_step]
-        vo = latest_slice["vo"].values[::subsample_step, ::subsample_step]
+        # Find closest valid time slice to current date (avoids empty future forecast horizons)
+        times = [np.datetime64(t, 's') for t in ds["time"].values]
+        now_np = np.datetime64(now.strftime("%Y-%m-%d"), 's')
+        diffs = [abs((t - now_np).astype(int)) for t in times]
+        sorted_indices = sorted(range(len(times)), key=lambda i: diffs[i])
+
+        chosen_slice = None
+        chosen_time_str = now.isoformat()
+        for idx in sorted_indices:
+            sub = ds.isel(time=idx, depth=0)
+            valid_count = int((~np.isnan(sub["uo"].values)).sum())
+            if valid_count > 0:
+                chosen_slice = sub
+                chosen_time_str = str(times[idx])
+                logger.info("[CMEMS] Selected time slice %s with %d valid velocity cells", chosen_time_str, valid_count)
+                break
+
+        if chosen_slice is None:
+            raise ValueError("No valid ocean current velocity cells found in CMEMS dataset time slices")
+
+        lats = chosen_slice["latitude"].values[::subsample_step]
+        lons = chosen_slice["longitude"].values[::subsample_step]
+        uo = chosen_slice["uo"].values[::subsample_step, ::subsample_step]
+        vo = chosen_slice["vo"].values[::subsample_step, ::subsample_step]
 
         vectors: List[Dict[str, Any]] = []
         scale_factor = 0.85  # visual trajectory vector scale

@@ -18,6 +18,11 @@ html, body, #__next {
   -webkit-font-smoothing: antialiased;
 }
 
+body.theme-light, .theme-light {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
 /* Glassmorphism styling */
 .glass-panel {
   background: rgba(11, 20, 38, 0.85);
@@ -27,10 +32,21 @@ html, body, #__next {
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
 }
 
+.theme-light .glass-panel {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(203, 213, 225, 0.8);
+  box-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.08);
+}
+
 .glass-panel-subtle {
   background: rgba(15, 27, 51, 0.65);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.theme-light .glass-panel-subtle {
+  background: rgba(248, 250, 252, 0.85);
+  border: 1px solid rgba(226, 232, 240, 0.8);
 }
 
 /* MapLibre popup custom style */
@@ -44,6 +60,13 @@ html, body, #__next {
   font-family: var(--font-sans) !important;
 }
 
+.theme-light .maplibregl-popup-content {
+  background: rgba(255, 255, 255, 0.98) !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(203, 213, 225, 0.9) !important;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.12), 0 0 15px 0 rgba(14, 165, 233, 0.1) !important;
+}
+
 .maplibregl-popup-close-button {
   color: #94a3b8 !important;
   padding: 4px 8px !important;
@@ -54,9 +77,21 @@ html, body, #__next {
   background: transparent !important;
 }
 
+.theme-light .maplibregl-popup-close-button {
+  color: #64748b !important;
+}
+.theme-light .maplibregl-popup-close-button:hover {
+  color: #0f172a !important;
+}
+
 .maplibregl-popup-tip {
   border-top-color: rgba(10, 18, 35, 0.95) !important;
   border-bottom-color: rgba(10, 18, 35, 0.95) !important;
+}
+
+.theme-light .maplibregl-popup-tip {
+  border-top-color: rgba(255, 255, 255, 0.98) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.98) !important;
 }
 
 /* Custom Scrollbars */
@@ -73,6 +108,17 @@ html, body, #__next {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(56, 189, 248, 0.45);
+}
+
+.theme-light ::-webkit-scrollbar-track {
+  background: rgba(241, 245, 249, 0.8);
+}
+.theme-light ::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.5);
+  border-radius: 3px;
+}
+.theme-light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.7);
 }
 
 /* Radar pulse animation */
