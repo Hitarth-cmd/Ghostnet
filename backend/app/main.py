@@ -39,11 +39,23 @@ app.add_middleware(
 @app.on_event("startup")
 def on_startup() -> None:
     init_db()
-    db = SessionLocal()
-    try:
-        seed_demo_data(db)
-    finally:
-        db.close()
+    
+    # Run seeding in a background thread so the server can start immediately
+    def seed_task():
+        db = SessionLocal()
+        try:
+            from app.models.detection import Detection
+            # Only seed if database is empty to avoid long startup
+            if db.query(Detection).count() == 0:
+                logger.info("[STARTUP] Database empty, starting background seeding...")
+                seed_demo_data(db)
+        except Exception as e:
+            logger.error("[STARTUP] Background seeding failed: %s", e)
+        finally:
+            db.close()
+            
+    import threading
+    threading.Thread(target=seed_task, daemon=True).start()
 
     # Pre-load and cache ecological data layers (coral reefs, species habitats, extended MPAs)
     try:

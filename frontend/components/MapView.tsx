@@ -505,13 +505,24 @@ export default function MapView({
     }
 
     // 3. Deck.gl Glowing 3D Scatterplot Beacons on Detections
-    const detectionPoints = curLayers.detections.features.map((f) => ({
-      coordinates: f.geometry.coordinates,
-      external_id: f.properties.external_id,
-      confidence: f.properties.confidence,
-      status: f.properties.incident_status || f.properties.status,
-      isSelected: f.properties.external_id === curSelId,
-    }));
+    const detectionPoints = curLayers.detections.features.map((f) => {
+      let coords: [number, number] = [0, 0];
+      if (f.geometry.type === "Point") {
+        coords = f.geometry.coordinates as [number, number];
+      } else if (f.geometry.type === "Polygon" && (f.geometry.coordinates as any)?.[0]?.length > 0) {
+        const ring = (f.geometry.coordinates as any)[0];
+        const avgLon = ring.reduce((sum: number, pt: number[]) => sum + pt[0], 0) / ring.length;
+        const avgLat = ring.reduce((sum: number, pt: number[]) => sum + pt[1], 0) / ring.length;
+        coords = [avgLon, avgLat];
+      }
+      return {
+        coordinates: coords,
+        external_id: f.properties.external_id,
+        confidence: f.properties.confidence,
+        status: f.properties.incident_status || f.properties.status,
+        isSelected: f.properties.external_id === curSelId,
+      };
+    }).filter((d) => d.coordinates[0] !== 0 && d.coordinates[1] !== 0);
 
     deckLayers.push(
       new ScatterplotLayer({

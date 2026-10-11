@@ -21,7 +21,7 @@ logger = logging.getLogger("ghostnet.earthengine")
 
 DEFAULT_EE_PROJECT = "balmy-ocean-509105-v8"
 
-# 10 Offshore Indian Coastal Monitoring Hotspots for rapid 1-click GEE scanning
+# 24 Comprehensive Offshore Indian Ocean Monitoring Hotspots for rapid 1-click GEE scanning
 OFFSHORE_REGIONS = [
     {
         "id": "goa_offshore",
@@ -34,15 +34,15 @@ OFFSHORE_REGIONS = [
         "id": "mumbai_offshore",
         "name": "Mumbai Offshore (Arabian Sea)",
         "description": "High vessel traffic & coastal macro-plastic corridor",
-        "latitude": 18.80,
-        "longitude": 72.15,
+        "latitude": 18.95,
+        "longitude": 71.95,
     },
     {
         "id": "gulf_of_mannar",
         "name": "Gulf of Mannar Marine Biosphere",
         "description": "Sensitive coral reef barrier & turtle nesting waters",
         "latitude": 8.85,
-        "longitude": 79.45,
+        "longitude": 79.25,
     },
     {
         "id": "lakshadweep_atoll",
@@ -63,7 +63,7 @@ OFFSHORE_REGIONS = [
         "name": "Chennai Offshore (Bay of Bengal)",
         "description": "Eastern seaboard port approaches & drift confluence",
         "latitude": 13.15,
-        "longitude": 80.95,
+        "longitude": 80.45,
     },
     {
         "id": "andaman_waters",
@@ -76,8 +76,120 @@ OFFSHORE_REGIONS = [
         "id": "kutch_gulf",
         "name": "Gulf of Kutch Waters",
         "description": "Mangrove biospheres & marine national park boundary",
-        "latitude": 22.10,
-        "longitude": 68.60,
+        "latitude": 22.25,
+        "longitude": 68.75,
+    },
+    {
+        "id": "visakhapatnam_offshore",
+        "name": "Visakhapatnam Deep Trench",
+        "description": "Eastern naval fairway & deep pelagic canyon",
+        "latitude": 17.65,
+        "longitude": 83.45,
+    },
+    {
+        "id": "mangalore_offshore",
+        "name": "Mangalore Coastal Shelf",
+        "description": "Heavy commercial trawling grounds & net loss zone",
+        "latitude": 12.85,
+        "longitude": 74.30,
+    },
+    {
+        "id": "sundarbans_fringe",
+        "name": "Sundarbans Marine Delta",
+        "description": "Estuarine outflow & Bay of Bengal convergence",
+        "latitude": 21.35,
+        "longitude": 88.85,
+    },
+    {
+        "id": "gahirmatha_sanctuary",
+        "name": "Gahirmatha Olive Ridley Waters",
+        "description": "Critical sea turtle nesting habitat & no-fishing sanctuary",
+        "latitude": 20.65,
+        "longitude": 87.15,
+    },
+    {
+        "id": "porbandar_offshore",
+        "name": "Porbandar Offshore Waters",
+        "description": "Saurashtra coast mechanized fishing fleet track",
+        "latitude": 21.55,
+        "longitude": 69.30,
+    },
+    {
+        "id": "malvan_sanctuary",
+        "name": "Malvan Marine Sanctuary Approach",
+        "description": "Maharashtra coral beds & rocky reef fringe",
+        "latitude": 15.95,
+        "longitude": 73.20,
+    },
+    {
+        "id": "minicoy_channel",
+        "name": "Minicoy Eight Degree Channel",
+        "description": "International east-west tanker lane & tuna migration",
+        "latitude": 8.25,
+        "longitude": 72.95,
+    },
+    {
+        "id": "great_nicobar",
+        "name": "Great Nicobar Biosphere Reserve",
+        "description": "Six Degree Channel entry & deep coral barrier",
+        "latitude": 6.95,
+        "longitude": 93.75,
+    },
+    {
+        "id": "colombo_offshore",
+        "name": "Colombo Shipping Highway",
+        "description": "Sri Lanka west coast heavy container corridor",
+        "latitude": 6.85,
+        "longitude": 79.40,
+    },
+    {
+        "id": "galle_highway",
+        "name": "Galle Southern Deepwater Lane",
+        "description": "Indian Ocean major east-west transit lane",
+        "latitude": 5.85,
+        "longitude": 80.25,
+    },
+    {
+        "id": "maldives_male",
+        "name": "Maldives North Male Fringes",
+        "description": "Pelagic reef passes & oceanic drift confluence",
+        "latitude": 4.45,
+        "longitude": 73.65,
+    },
+    {
+        "id": "equatorial_jet",
+        "name": "Equatorial Indian Ocean Jet",
+        "description": "Open ocean hydrodynamic drift convergence zone",
+        "latitude": 3.80,
+        "longitude": 78.50,
+    },
+    {
+        "id": "palk_strait",
+        "name": "Palk Strait Shallow Channel",
+        "description": "Benthic seagrass beds & traditional gillnet drift",
+        "latitude": 9.60,
+        "longitude": 79.55,
+    },
+    {
+        "id": "krishna_godavari",
+        "name": "Krishna-Godavari Estuarine Zone",
+        "description": "Deepwater gas platforms & coastal riverine drift",
+        "latitude": 16.10,
+        "longitude": 81.80,
+    },
+    {
+        "id": "ratnagiri_shelf",
+        "name": "Ratnagiri Continental Shelf",
+        "description": "Konkan coast purse-seine fishing corridor",
+        "latitude": 16.90,
+        "longitude": 72.70,
+    },
+    {
+        "id": "alappuzha_plume",
+        "name": "Alappuzha Mud Bank Fishery",
+        "description": "Seasonal mud bank aggregation & trawl confluence",
+        "latitude": 9.35,
+        "longitude": 76.05,
     },
 ]
 
@@ -92,6 +204,8 @@ def initialize_earth_engine(project_id: Optional[str] = None) -> Tuple[bool, Opt
     global _EE_INITIALIZED, _EE_AUTH_ERROR
     if _EE_INITIALIZED:
         return True, None
+    if _EE_AUTH_ERROR is not None:
+        return False, _EE_AUTH_ERROR
 
     proj = project_id or os.environ.get("EE_PROJECT_ID", DEFAULT_EE_PROJECT)
     try:

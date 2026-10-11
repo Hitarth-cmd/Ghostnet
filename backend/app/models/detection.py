@@ -58,7 +58,10 @@ class Detection(Base):
     def to_geojson_feature(self) -> dict:
         return {
             "type": "Feature",
-            "geometry": self.geometry,
+            "geometry": {
+                "type": "Point",
+                "coordinates": [self.longitude, self.latitude],
+            },
             "properties": {
                 "id": self.id,
                 "external_id": self.external_id,
@@ -76,5 +79,6 @@ class Detection(Base):
                 "source": self.source,
                 "scene_id": self.scene_id,
                 "area_m2": self.area_m2,
+                "footprint": self.geometry if (isinstance(self.geometry, dict) and self.geometry.get("type") == "Polygon") else None,
             },
         }
